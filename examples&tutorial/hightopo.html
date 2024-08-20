@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body {
+            background-color: #ccc;
+        }
+
+        h1 {
+            /* text-align: center; */
+            /* text-shadow: 0px 0px 0px red; */
+            height: 100px;
+            line-height: 100px;
+            background-color: black;
+            font-size: 40px;
+            color: white;
+            text-align: center;
+            text-shadow: 0 0 40px red;
+        }
+
+        h2 {
+            height: 100px;
+            line-height: 100px;
+            background-color: black;
+            font-size: 40px;
+            color: white;
+            text-align: center;
+            text-shadow: 0 0 10px red,
+                0 0 20px red,
+                0 0 30px red,
+                0 0 40px red;
+            /* text-shadow: 0 0 5px white,
+                0 0 10px #00FFFF,
+                0 0 15px #7FFF00,
+                0 0 20px white; */
+
+        }
+
+        div:hover {
+            animation: glow 0.5s ease infinite alternate;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #fff,
+                    0 0 20px #fff,
+                    0 0 30px #fff,
+                    0 0 40px #00a67c,
+                    0 0 70px #00a67c,
+                    0 0 80px #00a67c,
+                    0 0 100px #00a67c,
+                    0 0 150px #00a67c;
+            }
+
+            to {
+                text-shadow: 0 0 5px #fff,
+                    0 0 10px #fff,
+                    0 0 15px #fff,
+                    0 0 20px #00a67c,
+                    0 0 35px #00a67c,
+                    0 0 40px #00a67c,
+                    0 0 50px #00a67c,
+                    0 0 75px #00a67c;
+            }
+        }
+
+        .circle {
+            width: 300px;
+            height: 300px;
+            /* margin: 0 auto; */
+            background: conic-gradient(#9ED110, #50B517, #179067, #476EAF, #9f49ac, #CC42A2, #FF3BA7, #FF5800, #FF8100, #FEAC00, #FFCC00, #EDE604);
+            border-radius: 50%;
+            /* 径向渐变radial-gradient语法生成一个中间透明，边缘实色的圆环 */
+            -webkit-mask: radial-gradient(transparent 110px, #000 110px);
+            transition: clip-path .2s;
+
+        }
+
+        .second {
+            width: 300px;
+            height: 300px;
+            /* margin: 0 auto; */
+            line-height: 290px;
+            text-align: center;
+            font-size: 80px;
+            position: absolute;
+            margin-top: -300px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<script src="./htConfig.js"></script>
+<script src="./ht.js"></script>
+<script src="./ht-form.js"></script>
+
+<body>
+    <div id="circle" class="circle"></div>
+    <div id="seconds" class="second"></div>
+
+    <h1>H1 Glowing</h1>
+    <h2>Div Glowing</h2>
+    <!-- 动态文字图片 -->
+    <!-- https://www.html5tricks.com/demo/html5-css3-shadow-shine-text/index.html -->
+
+    <script>
+
+
+        // 元素
+        var eleCircle = document.getElementById('circle');
+        var eleSeconds = document.getElementById('seconds');
+
+        // 圆环状态还原
+        var circleInit = function () {
+            eleCircle.style.clipPath = '';
+
+            eleSeconds.innerHTML = '';
+        };
+
+        var timerTimeCount = null;
+        var fnTimeCount = function (seconds) {
+            if (timerTimeCount) {
+                return;
+            }
+            // 倒计时方法
+            var seconds = seconds || 10;
+
+            var step = function () {
+                // 圆环匹配
+                var percent = seconds / 10;
+
+                // clip-path严格来讲是个扇形
+                // 但polygon只能连接直线，因此，这个扇形半径就要处理的足够大，例如，500这样子
+                // 于是有公式
+                // x=a+rcosθ
+                // y=b+rsinθ
+                var a = 150, b = 150, r = 500;
+                var angle = Math.PI / 180 * (360 * percent - 90);
+                var x = a + r * Math.cos(angle);
+                var y = b + r * Math.sin(angle);
+
+                // 总共7个点
+                var p1 = p2 = p3 = p4 = p5 = p6 = p7 = [a, b];
+
+                if (x < a) {
+                    p2 = [a, b - r];
+                    p3 = [a + r, b - r];
+                    p4 = [a + r, b + r];
+                    p5 = [a, b + r];
+                    p6 = [a - r, b];
+                    p7 = [x, y];
+                    if (y > b) {
+                        p6 = p7;
+                    }
+                } else {
+                    p2 = [a, b - r];
+                    p3 = [a + r, b - r];
+                    p4 = [a + r, b];
+                    p5 = [x, y];
+                    p6 = p5;
+                    p7 = p5;
+                    if (y < b) {
+                        p4 = [x, y];
+                    }
+                }
+                eleCircle.style.clipPath = 'polygon(' + (function () {
+                    return [p1, p2, p3, p4, p5, p6, p7].map(function (arr) {
+                        return arr.map(function (pos) {
+                            return pos + 'px';
+                        }).join(' ');
+                    }).join();
+                })() + ')';
+
+                eleSeconds.innerHTML = seconds;
+
+                seconds--;
+
+                if (seconds < 0) {
+                    clearInterval(timerTimeCount);
+                    timerTimeCount = null;
+                    // 显示弹框
+                    // alert('时间到！');
+                    // 圆环状态还原
+                    circleInit();
+                }
+            };
+
+            step();
+
+            timerTimeCount = setInterval(step, 1000);
+        };
+
+        fnTimeCount();
+
+        // 树结构过滤即保留某些符合条件的节点，剪裁掉其它节点。一个节点是否保留在过滤后的树结构中，取决于它以及后代节点中是否有符合条件的节点。可以传入一个两数描述符合条件的节点
+        let data = [
+            {
+                id: 1,
+                name: 'mock',
+                type: 1,
+                subs: [
+                    {
+                        id: 4,
+                        name: 'agency.sol',
+                        type: 2,
+                        subs: {
+                            id: 10,
+                            name: 'account.sol',
+                            type: 2,
+                            subs: null,
+                        },
+                    },
+                    {
+                        id: 5,
+                        name: 'blockchain.sol',
+                        type: 2,
+                        subs: null,
+                    },
+                ],
+            },
+            {
+                id: 2,
+                name: 'public',
+                type: 1,
+                subs: [
+                    {
+                        id: 6,
+                        name: 'vote.sol',
+                        type: 2,
+                        subs: null,
+                    },
+                    {
+                        id: 7,
+                        name: 'user.sol',
+                        type: 2,
+                        subs: null,
+                    },
+                ],
+            },
+        ]
+
+
+        function filter(condition = () => false, key) {
+            return function filtrate(data) {
+                return data.reduce((res, item) => {
+                    if (!condition(item)) {
+                        const children = item[key];
+                        res.push({
+                            ...item,
+                            [key]: Array.isArray(children) ? filtrate(children) : children,
+                        });
+                    }
+                    return res;
+                }, []);
+            }
+        }
+
+
+        var filterIdEqual2 = filter(item => item.id == 2, 'subs')
+        var filterIdEqual7 = filter(item => item.id == 7, 'subs')
+
+        console.log(filterIdEqual2(data))
+        console.log('----------')
+        console.log(filterIdEqual7(data))
+
+
+        function filterTree(tree = [], map = [], arr = []) {
+            if (!tree.length) return []
+            for (let item of tree) {
+                if (map.includes(item.id)) continue
+                let node = undefined
+                if (Array.isArray(item.subs)) {
+                    node = { ...item, subs: [] }
+                } else {
+                    node = { ...item }
+                }
+                arr.push(node)
+                if (item.subs && item.subs.length) filterTree(item.subs, map, node.subs)
+            }
+            return arr
+        }
+
+        const result = filterTree(data, [6, 7])
+        console.log(result);
+    </script>
+
+</body>
+
+</html>
