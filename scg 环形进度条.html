@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Title</title>
+
+    <style>
+      .progress-circle {
+        width: 100px;
+        height: 100px;
+      }
+
+      svg {
+        width: 100%;
+        height: 100%;
+        fill: none;
+      }
+
+      .circle {
+        fill: none;
+      }
+
+      .background-circle {
+        stroke: #e0e0e0; /* 背景色 */
+        stroke-width: 10;
+      }
+
+      .progress-circle {
+        --percent: 50;
+        --circumference: calc(2 * 3.1415 * 40); /* 根据半径计算周长 */
+        stroke-dasharray: var(--circumference);
+        stroke-dashoffset: calc(var(--circumference) - (var(--percent) / 100) * var(--circumference));
+
+        stroke: #7856d7; /* 主色 */
+        stroke-width: 10;
+        stroke-linecap: round;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dasharray 0.3s;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="progress-circle">
+      <svg width="100" height="100">
+        <circle class="background-circle" cx="50" cy="50" r="40"></circle>
+        <circle class="progress-circle" cx="50" cy="50" r="40"></circle>
+      </svg>
+    </div>
+
+    <script>
+      // https://codepen.io/wingmeng/pen/MWZBeBM
+      const progressCircle = document.querySelector(".progress-circle");
+      const progress = 75; // 设置进度值（范围：0-100）
+
+      const radius = progressCircle.clientWidth / 2 - 5; // 半径
+      const circumference = 2 * Math.PI * radius; // 周长
+
+      progressCircle.style.setProperty("--percent", progress);
+      progressCircle.style.setProperty("--circumference", circumference);
+    </script>
+  </body>
+</html>
