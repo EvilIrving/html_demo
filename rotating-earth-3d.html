@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Rotating Earth</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="earthCanvas" width="400" height="400"></canvas>
+    <script>
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({
+        canvas: document.getElementById("earthCanvas"),
+        antialias: true,
+        alpha: true,
+      });
+
+      const geometry = new THREE.SphereGeometry(1, 32, 32);
+      const texture = new THREE.TextureLoader().load("./images/world.png");
+      const material = new THREE.MeshBasicMaterial({ map: texture });
+      const earth = new THREE.Mesh(geometry, material);
+
+      scene.add(earth);
+      camera.position.z = 2;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        earth.rotation.y += 0.005;
+        renderer.render(scene, camera);
+      }
+
+      animate();
+    </script>
+  </body>
+</html>
