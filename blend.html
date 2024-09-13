@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Image Blending</title>
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+      }
+      canvas {
+        border: 1px solid #000;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas" width="800" height="400"></canvas>
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      // 加载图片
+      const image1 = new Image();
+      image1.src = "https://image.cryptothrift.cc/d/lnvidR";
+      image1.onload = function () {
+        drawImageWithBlending(image1, 0, 0, 0.3);
+      };
+
+      const image2 = new Image();
+      image2.src = "https://image.cryptothrift.cc/d/liGIk8";
+      image2.onload = function () {
+        drawImageWithBlending(image2, canvas.width / 2, 0, 0.3);
+      };
+
+      function drawImageWithBlending(image, x, y, blendWidthRatio) {
+        const width = canvas.width / 2;
+        const height = canvas.height;
+        const blendWidth = width * blendWidthRatio;
+
+        // 绘制第一张图片
+        ctx.drawImage(image, x, y, width, height);
+
+        // 绘制第二张图片
+        ctx.drawImage(image, x + width, y, width, height);
+
+        // 创建渐变
+        const gradient = ctx.createLinearGradient(
+          x + width - blendWidth,
+          y,
+          x + width,
+          y
+        );
+        gradient.addColorStop(0, "rgba(255, 255, 255, 0)");
+        gradient.addColorStop(0.5, "rgba(255, 255, 255, 1)");
+        gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+        // 绘制渐变
+        ctx.fillStyle = gradient;
+        ctx.fillRect(x + width - blendWidth, y, blendWidth, height);
+      }
+    </script>
+  </body>
+</html>
