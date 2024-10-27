@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Image True Blend Demo</title>
+    <style>
+        canvas {
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <script>
+        class ImageTrueBlender {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+            }
+
+            async blend(image1Src, image2Src) {
+                // 加载两张图片
+                const [img1, img2] = await Promise.all([
+                    this.loadImage(image1Src),
+                    this.loadImage(image2Src)
+                ]);
+
+                // 设置画布尺寸
+                const totalWidth = img1.width + img2.width * 0.8; // 减去5%重叠
+                const height = Math.max(img1.height, img2.height);
+                this.canvas.width = totalWidth;
+                this.canvas.height = height;
+
+                // 计算重叠区域
+                const overlapWidth = img1.width * 0.2; // 5%重叠宽度
+                const img2StartX = img1.width - overlapWidth;
+
+                // 创建离屏canvas用于图片1
+                const canvas1 = document.createElement('canvas');
+                canvas1.width = img1.width;
+                canvas1.height = height;
+                const ctx1 = canvas1.getContext('2d');
+                ctx1.drawImage(img1, 0, 0);
+
+                // 创建离屏canvas用于图片2
+                const canvas2 = document.createElement('canvas');
+                canvas2.width = img2.width;
+                canvas2.height = height;
+                const ctx2 = canvas2.getContext('2d');
+                ctx2.drawImage(img2, 0, 0);
+
+                // 绘制非重叠部分
+                // 图1的非重叠部分
+                this.ctx.drawImage(canvas1, 
+                    0, 0, img1.width - overlapWidth, height,  // source
+                    0, 0, img1.width - overlapWidth, height   // destination
+                );
+                
+                // 图2的非重叠部分
+                this.ctx.drawImage(canvas2,
+                    overlapWidth, 0, img2.width - overlapWidth, height,  // source
+                    img2StartX + overlapWidth, 0, img2.width - overlapWidth, height  // destination
+                );
+
+                // 处理重叠区域
+                const overlapRegion = this.ctx.createImageData(overlapWidth, height);
+                
+                // 获取重叠区域的像素数据
+                const img1Data = ctx1.getImageData(img1.width - overlapWidth, 0, overlapWidth, height);
+                const img2Data = ctx2.getImageData(0, 0, overlapWidth, height);
+
+                // 像素级别的融合
+                for (let i = 0; i < overlapRegion.data.length; i += 4) {
+                    const x = (i / 4) % overlapWidth;
+                    const blendFactor = x / overlapWidth; // 从左到右的渐变因子
+
+                    // 对每个颜色通道进行融合
+                    for (let j = 0; j < 3; j++) {
+                        const idx = i + j;
+                        overlapRegion.data[idx] = Math.round(
+                            img1Data.data[idx] * (1 - blendFactor) +
+                            img2Data.data[idx] * blendFactor
+                        );
+                    }
+                    // Alpha通道
+                    overlapRegion.data[i + 3] = 255;
+                }
+
+                // 将融合后的重叠区域绘制到主画布
+                this.ctx.putImageData(overlapRegion, img2StartX, 0);
+            }
+
+            loadImage(src) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = src;
+                });
+            }
+        }
+
+        // 使用示例
+        const canvas = document.getElementById('canvas');
+        const blender = new ImageTrueBlender(canvas);
+
+        // 替换为实际的图片URL
+        blender.blend('./images/1.jpg', './images/2.jpg').catch(console.error);
+    </script>
+</body>
+</html>

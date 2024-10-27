@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seamless Puzzle Generator with Blur Effect</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .canvas-container {
+            position: relative;
+            margin-top: 20px;
+        }
+        canvas {
+            border: 1px solid #ccc;
+            margin-top: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        input[type="number"] {
+            width: 60px;
+            padding: 4px;
+            margin: 0 10px;
+        }
+        label {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Seamless Puzzle Generator with Blur Effect</h1>
+        <div class="controls">
+            <input type="file" multiple id="imageInput" accept="image/*">
+            <br><br>
+            <label>Rows:</label>
+            <input type="number" id="rows" value="3" min="2" max="10">
+            <label>Columns:</label>
+            <input type="number" id="columns" value="3" min="2" max="10">
+            <label>Blur Radius:</label>
+            <input type="number" id="blurRadius" value="20" min="5" max="50">
+            <button onclick="generatePuzzle()">Generate Puzzle</button>
+        </div>
+        <div class="canvas-container">
+            <canvas id="puzzleCanvas"></canvas>
+        </div>
+    </div>
+
+    <script>
+        class PuzzlePieceGenerator {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.blurRadius = 20;
+                this.edgeWidth = 40;
+            }
+
+            async generatePieces(image, rows, columns) {
+                this.canvas.width = image.width;
+                this.canvas.height = image.height;
+                
+                const pieceWidth = image.width / columns;
+                const pieceHeight = image.height / rows;
+                
+                // Draw original image
+                this.ctx.drawImage(image, 0, 0);
+                
+                // Create temporary canvas for each piece
+                const tempCanvas = document.createElement('canvas');
+                const tempCtx = tempCanvas.getContext('2d');
+                tempCanvas.width = this.canvas.width;
+                tempCanvas.height = this.canvas.height;
+
+                // Generate puzzle grid
+                for (let row = 0; row < rows; row++) {
+                    for (let col = 0; col < columns; col++) {
+                        const x = col * pieceWidth;
+                        const y = row * pieceHeight;
+                        
+                        // Clear temp canvas
+                        tempCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+                        
+                        // Create gradient mask
+                        const gradient = this.createGradientMask(tempCtx, x, y, pieceWidth, pieceHeight, rows, columns, row, col);
+                        
+                        // Draw the image portion
+                        tempCtx.save();
+                        tempCtx.globalCompositeOperation = 'source-in';
+                        tempCtx.drawImage(image, 0, 0);
+                        tempCtx.restore();
+                        
+                        // Apply blur effect to the edges
+                        this.ctx.save();
+                        this.ctx.filter = `blur(${this.blurRadius}px)`;
+                        this.ctx.globalCompositeOperation = 'destination-out';
+                        this.ctx.drawImage(tempCanvas, 0, 0);
+                        this.ctx.restore();
+                        
+                        // Draw the piece with original sharpness
+                        this.ctx.save();
+                        this.ctx.globalCompositeOperation = 'source-over';
+                        this.ctx.drawImage(tempCanvas, 0, 0);
+                        this.ctx.restore();
+                    }
+                }
+            }
+
+            createGradientMask(ctx, x, y, width, height, rows, columns, currentRow, currentCol) {
+                ctx.save();
+                
+                // Create complex path for the piece
+                ctx.beginPath();
+                this.generatePiecePath(ctx, x, y, width, height, rows, columns, currentRow, currentCol);
+                ctx.closePath();
+                
+                // Create gradient for edges
+                const gradient = ctx.createRadialGradient(
+                    x + width/2, y + height/2, Math.min(width, height) * 0.3,
+                    x + width/2, y + height/2, Math.min(width, height) * 0.5
+                );
+                
+                gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+                
+                // Fill with gradient
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                ctx.restore();
+                return gradient;
+            }
+
+            generatePiecePath(ctx, x, y, width, height, rows, columns, row, col) {
+                const curveIntensity = Math.min(width, height) * 0.2;
+                
+                // Top edge
+                ctx.moveTo(x, y);
+                if (row > 0) {
+                    this.createWavyLine(ctx, x, y, width, true, false, curveIntensity);
+                } else {
+                    ctx.lineTo(x + width, y);
+                }
+                
+                // Right edge
+                if (col < columns - 1) {
+                    this.createWavyLine(ctx, x + width, y, height, false, false, curveIntensity);
+                } else {
+                    ctx.lineTo(x + width, y + height);
+                }
+                
+                // Bottom edge
+                if (row < rows - 1) {
+                    this.createWavyLine(ctx, x + width, y + height, width, true, true, curveIntensity);
+                } else {
+                    ctx.lineTo(x, y + height);
+                }
+                
+                // Left edge
+                if (col > 0) {
+                    this.createWavyLine(ctx, x, y + height, height, false, true, curveIntensity);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+
+            createWavyLine(ctx, startX, startY, length, isHorizontal, isReverse, intensity) {
+                const points = [];
+                const segments = 3;
+                
+                for (let i = 0; i <= segments; i++) {
+                    const t = i / segments;
+                    const amt = isReverse ? 1 - t : t;
+                    
+                    const x = isHorizontal ? 
+                        startX + (isReverse ? -length * t : length * t) :
+                        startX + Math.sin(amt * Math.PI) * intensity;
+                        
+                    const y = isHorizontal ?
+                        startY + Math.sin(amt * Math.PI) * intensity :
+                        startY + (isReverse ? -length * t : length * t);
+                        
+                    points.push({x, y});
+                }
+                
+                ctx.moveTo(points[0].x, points[0].y);
+                
+                for (let i = 1; i < points.length; i++) {
+                    const xc = (points[i-1].x + points[i].x) / 2;
+                    const yc = (points[i-1].y + points[i].y) / 2;
+                    ctx.quadraticCurveTo(points[i-1].x, points[i-1].y, xc, yc);
+                }
+            }
+        }
+
+        // Initialize canvas and generator
+        const canvas = document.getElementById('puzzleCanvas');
+        const generator = new PuzzlePieceGenerator(canvas);
+
+        // Function to handle puzzle generation
+        function generatePuzzle() {
+            const imageInput = document.getElementById('imageInput');
+            const rows = parseInt(document.getElementById('rows').value);
+            const columns = parseInt(document.getElementById('columns').value);
+            const blurRadius = parseInt(document.getElementById('blurRadius').value);
+            
+            if (!imageInput.files || !imageInput.files[0]) {
+                alert('Please select an image first!');
+                return;
+            }
+
+            const file = imageInput.files[0];
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    // Scale image if it's too large
+                    let width = img.width;
+                    let height = img.height;
+                    const maxSize = 800;
+                    
+                    if (width > maxSize || height > maxSize) {
+                        const ratio = Math.min(maxSize / width, maxSize / height);
+                        width *= ratio;
+                        height *= ratio;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    generator.blurRadius = blurRadius;
+                    generator.generatePieces(img, rows, columns);
+                };
+                img.src = e.target.result;
+            };
+            
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
