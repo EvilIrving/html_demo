@@ -48,13 +48,15 @@
             return { width: scaledWidth, height: scaledHeight };
           });
 
-          // 计算重叠区域
-          const overlapWidth = frameWidth * 0.05; // 重叠宽度 5% - 30%
-          const img2StartX = frameWidth - overlapWidth;
+          // 修改重叠计算逻辑
+          const overlapRatio = 0.05; // 5% 缩放比例
+          const scaleRatio = 1 + overlapRatio; // 缩放比例，例如 1.05
+          const scaledFrameWidth = frameWidth * scaleRatio; // 缩放后的帧宽度
+          const overlapWidth = scaledFrameWidth - frameWidth; // 实际重叠宽度
 
-          // 创建离屏canvas并绘制缩放后的图片
+          // 修改 canvas1 的尺寸和绘制
           const canvas1 = document.createElement("canvas");
-          canvas1.width = frameWidth;
+          canvas1.width = scaledFrameWidth;
           canvas1.height = frameHeight;
           const ctx1 = canvas1.getContext("2d");
           ctx1.drawImage(
@@ -62,15 +64,16 @@
             0,
             0,
             img1.width,
-            img1.height, // source
+            img1.height,
             0,
             0,
-            img1Scaled.width,
-            img1Scaled.height // destination
+            img1Scaled.width * scaleRatio,
+            img1Scaled.height
           );
 
+          // 修改 canvas2 的尺寸和绘制
           const canvas2 = document.createElement("canvas");
-          canvas2.width = frameWidth;
+          canvas2.width = scaledFrameWidth;
           canvas2.height = frameHeight;
           const ctx2 = canvas2.getContext("2d");
           ctx2.drawImage(
@@ -78,38 +81,39 @@
             0,
             0,
             img2.width,
-            img2.height, // source
+            img2.height,
             0,
             0,
-            img2Scaled.width,
-            img2Scaled.height // destination
+            img2Scaled.width * scaleRatio,
+            img2Scaled.height
           );
 
+          // 调整绘制位置
+          const img2StartX = frameWidth - overlapWidth;
+
           // 绘制非重叠部分
-          // 图1的非重叠部分
           this.ctx.drawImage(
             canvas1,
             0,
             0,
-            frameWidth - overlapWidth,
-            frameHeight, // source
+            frameWidth,
+            frameHeight,
             0,
             0,
-            frameWidth - overlapWidth,
-            frameHeight // destination
+            frameWidth,
+            frameHeight
           );
 
-          // 图2的非重叠部分
           this.ctx.drawImage(
             canvas2,
-            overlapWidth,
+            scaledFrameWidth - frameWidth,
             0,
-            frameWidth - overlapWidth,
-            frameHeight, // source
-            img2StartX + overlapWidth,
+            frameWidth,
+            frameHeight,
+            frameWidth,
             0,
-            frameWidth - overlapWidth,
-            frameHeight // destination
+            frameWidth,
+            frameHeight
           );
 
           // 处理重叠区域
