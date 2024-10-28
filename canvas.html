@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Title Page</title>
+  </head>
+  <body>
+    <!-- <div style="border: 1px solid #ccc"> -->
+      <canvas id="canvas" width="800" height="600"></canvas>
+    <!-- </div> -->
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      Promise.all([
+        loadImage("./images/1.jpg"),
+        loadImage("./images/2.jpg"),
+      ]).then(([img1, img2]) => {
+        // image: 要绘制的图像元素。
+        // x: 目标 <canvas> 上的 x 坐标。
+        // y: 目标 <canvas> 上的 y 坐标。
+        // width: 要绘制的图像的宽度。
+        // height: 要绘制的图像的高度。
+        ctx.drawImage(img1, 0, 0, 600, 600);
+        ctx.drawImage(img2, 400, 0, 400, 600);
+      });
+
+      function loadImage(src) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+    </script>
+  </body>
+</html>

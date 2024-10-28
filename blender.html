@@ -10,29 +10,67 @@
   </head>
   <body>
     <canvas id="canvas"></canvas>
+    <!-- 添加滑动条控件 -->
+    <div style="margin: 20px">
+      <label for="overlapSlider">重叠比例: </label>
+      <input
+        type="range"
+        id="overlapSlider"
+        min="0.1"
+        max="0.3"
+        step="0.02"
+        value="0.16"
+      />
+      <span id="overlapValue">16%</span>
+    </div>
     <script>
       class ImageTrueBlender {
-        constructor(canvas) {
+        constructor(canvas, image1Src, image2Src) {
           this.canvas = canvas;
           this.ctx = canvas.getContext("2d");
           // 设置固定画布尺寸
           this.canvas.width = 600;
           this.canvas.height = 600;
+          this.image1Src = image1Src;
+          this.image2Src = image2Src;
+          this.img1 = null;
+          this.img2 = null;
+          // 初始化时加载图片
+          this.initImages();
         }
 
-        async blend(image1Src, image2Src) {
-          // 加载两张图片
-          const [img1, img2] = await Promise.all([
-            this.loadImage(image1Src),
-            this.loadImage(image2Src),
-          ]);
+        async initImages() {
+          try {
+            [this.img1, this.img2] = await Promise.all([
+              this.loadImage(this.image1Src),
+              this.loadImage(this.image2Src),
+            ]);
+            // 初始混合
+            const overlapRatio = 0.16;
+            this.blend(overlapRatio);
+            slider.value = overlapRatio;
+            valueDisplay.textContent = `${slider.value}`;
+            // 初始化 slider 值, 默认 overlapRatio 是 0.1，对应百分比约为 47%
+            // slider.value = ((overlapRatio - 0.01) / 0.19) * 100; // 结果约为47.368
+            // valueDisplay.textContent = `${slider.value}%`; // 显示初始百分比
+          } catch (error) {
+            console.error("图片加载失败:", error);
+          }
+        }
+
+        // 修改 blend 方法，移除 imageSrc 参数
+        blend(overlapRatio = 0.2) {
+          if (!this.img1 || !this.img2) {
+            console.error("图片尚未加载完成.");
+            return;
+          }
 
           // 计算每个图片的Frame尺寸（画布的一半宽度）
           const frameWidth = this.canvas.width / 2;
           const frameHeight = this.canvas.height;
 
           // 计算图片缩放后的尺寸
-          const [img1Scaled, img2Scaled] = [img1, img2].map((img) => {
+          const [img1Scaled, img2Scaled] = [this.img1, this.img2].map((img) => {
             const imgRatio = img.width / img.height;
             let scaledWidth, scaledHeight;
 
@@ -49,7 +87,6 @@
           });
 
           // 修改重叠计算逻辑
-          const overlapRatio = 0.2; // 5% 缩放比例
           const scaleRatio = 1 + overlapRatio; // 缩放比例，例如 1.05
           const scaledFrameWidth = frameWidth * scaleRatio; // 缩放后的帧宽度
           const overlapWidth = scaledFrameWidth - frameWidth; // 实际重叠宽度
@@ -59,16 +96,24 @@
           canvas1.width = scaledFrameWidth;
           canvas1.height = frameHeight;
           const ctx1 = canvas1.getContext("2d");
+
+          // 计算被放大的部分是多宽多高
+          const scaledWidth = img1Scaled.width * scaleRatio - img1Scaled.width;
+          const scaledHeight =
+            img1Scaled.height * scaleRatio - img1Scaled.height;
+
           ctx1.drawImage(
-            img1,
+            this.img1,
+            // source Image 的 x,y 坐标, 和裁剪宽高
             0,
             0,
-            img1.width,
-            img1.height,
-            0,
-            0,
-            img1Scaled.width * scaleRatio,
-            img1Scaled.height
+            this.img1.width,
+            this.img1.height,
+            // target canvas 的 x,y 坐标, 和绘制宽高
+            0 - scaledWidth / 2,
+            0 - scaledHeight / 2,
+            img1Scaled.width * scaleRatio + scaledWidth / 2,
+            img1Scaled.height * scaleRatio + scaledHeight / 2
           );
 
           // 修改 canvas2 的尺寸和绘制
@@ -76,22 +121,29 @@
           canvas2.width = scaledFrameWidth;
           canvas2.height = frameHeight;
           const ctx2 = canvas2.getContext("2d");
+
+          // 计算被放大的部分是多宽多高
+          const scaledWidth2 = img2Scaled.width * scaleRatio - img2Scaled.width;
+          const scaledHeight2 =
+            img2Scaled.height * scaleRatio - img2Scaled.height;
+
           ctx2.drawImage(
-            img2,
+            this.img2,
             0,
             0,
-            img2.width,
-            img2.height,
-            0,
-            0,
-            img2Scaled.width * scaleRatio,
-            img2Scaled.height
+            this.img2.width,
+            this.img2.height,
+            0 - scaledWidth2 / 2,
+            0 - scaledHeight2 / 2,
+            img2Scaled.width * scaleRatio + scaledWidth2 / 2,
+            img2Scaled.height * scaleRatio + scaledHeight2 / 2
           );
 
           // 调整绘制位置
           const img2StartX = frameWidth - overlapWidth;
 
           // 绘制非重叠部分
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
           this.ctx.drawImage(
             canvas1,
             0,
@@ -133,7 +185,7 @@
 
           // 像素级别的融合
           for (let i = 0; i < overlapRegion.data.length; i += 4) {
-            const x = (i / 4) % overlapWidth;
+            const x = Math.floor((i / 4) % overlapWidth);
             const blendFactor = x / overlapWidth; // 从左到右的渐变因子
 
             // 对每个颜色通道进行融合
@@ -164,10 +216,23 @@
 
       // 使用示例
       const canvas = document.getElementById("canvas");
-      const blender = new ImageTrueBlender(canvas);
+      // 图片路径
+      const image1Src = "./images/1.jpg";
+      const image2Src = "./images/2.jpg";
+      const blender = new ImageTrueBlender(canvas, image1Src, image2Src);
+      const slider = document.getElementById("overlapSlider");
+      const valueDisplay = document.getElementById("overlapValue");
 
-      // 替换为实际的图片URL
-      blender.blend("./images/1.jpg", "./images/2.jpg").catch(console.error);
+      // 滑动条变化处理函数
+      slider.addEventListener("input", function () {
+        const value = this.value;
+        console.log(value);
+        // const overlapRatio = (value / 100) * 0.19 + 0.01; // 将1-100映射到0.01-0.2
+        // valueDisplay.textContent = `${value}%`;
+        const overlapRatio = parseFloat(value);
+        valueDisplay.textContent = `${overlapRatio}`;
+        blender.blend(overlapRatio);
+      });
     </script>
   </body>
 </html>
