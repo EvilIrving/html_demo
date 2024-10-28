@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Single Canvas Image Blender Demo</title>
+    <style>
+      .container {
+        position: relative;
+        width: 600px;
+        height: 600px;
+        overflow: hidden;
+      }
+
+      canvas {
+        position: absolute;
+        touch-action: none;
+        cursor: move;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+      class ImageBlender {
+        constructor(container) {
+          this.container = container;
+          this.canvas = container.querySelector("canvas");
+          this.ctx = this.canvas.getContext("2d");
+
+          // 设置画布尺寸
+          this.canvas.width = container.clientWidth;
+          this.canvas.height = container.clientHeight;
+
+          this.frameWidth = this.canvas.width / 2;
+          this.frameHeight = this.canvas.height;
+
+          // 拖拽状态
+          this.dragState = {
+            isDragging: false,
+            startX: 0,
+            startY: 0,
+            activeImage: null, // 'left' 或 'right'
+            leftOffset: { x: 0, y: 0 },
+            rightOffset: { x: 0, y: 0 },
+          };
+
+          this.overlapRatio = 0.05;
+          this.initDragEvents();
+        }
+
+        initDragEvents() {
+          this.canvas.addEventListener("mousedown", (e) => this.startDrag(e));
+          document.addEventListener("mousemove", (e) => this.drag(e));
+          document.addEventListener("mouseup", () => this.endDrag());
+
+          // 触摸事件支持
+          this.canvas.addEventListener("touchstart", (e) =>
+            this.startDrag(e.touches[0])
+          );
+          document.addEventListener("touchmove", (e) => {
+            if (this.dragState.isDragging) {
+              e.preventDefault();
+              this.drag(e.touches[0]);
+            }
+          });
+          document.addEventListener("touchend", () => this.endDrag());
+        }
+
+        startDrag(event) {
+          const rect = this.canvas.getBoundingClientRect();
+          const x = event.clientX - rect.left;
+
+          this.dragState.isDragging = true;
+          this.dragState.startX = event.clientX;
+          this.dragState.startY = event.clientY;
+
+          // 根据点击位置判断拖动哪张图片
+          this.dragState.activeImage = x < this.frameWidth ? "left" : "right";
+        }
+
+        drag(event) {
+          if (!this.dragState.isDragging) return;
+
+          const dx = event.clientX - this.dragState.startX;
+          const dy = event.clientY - this.dragState.startY;
+
+          if (this.dragState.activeImage === "left") {
+            this.dragState.leftOffset.x += dx;
+            this.dragState.leftOffset.y += dy;
+          } else {
+            this.dragState.rightOffset.x += dx;
+            this.dragState.rightOffset.y += dy;
+          }
+
+          this.dragState.startX = event.clientX;
+          this.dragState.startY = event.clientY;
+
+          this.redraw();
+        }
+
+        endDrag() {
+          this.dragState.isDragging = false;
+          this.dragState.activeImage = null;
+        }
+
+        async blend(image1Src, image2Src) {
+          this.images = await Promise.all([
+            this.loadImage(image1Src),
+            this.loadImage(image2Src),
+          ]);
+
+          // 计算缩放后的尺寸
+          this.scaledSizes = this.calculateScaledSizes(this.images);
+
+          this.redraw();
+        }
+
+        calculateScaledSizes(images) {
+          const frameWidth = this.frameWidth;
+          const frameHeight = this.frameHeight;
+
+          return images.map((img) => {
+            const imgRatio = img.width / img.height;
+            let scaledWidth, scaledHeight;
+
+            if (imgRatio > frameWidth / frameHeight) {
+              scaledHeight = frameHeight;
+              scaledWidth = frameHeight * imgRatio;
+            } else {
+              scaledWidth = frameWidth;
+              scaledHeight = frameWidth / imgRatio;
+            }
+
+            return { width: scaledWidth, height: scaledHeight };
+          });
+        }
+
+        redraw() {
+          // 清除画布
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+          // 创建离屏canvas用于混合
+          const offscreen = document.createElement("canvas");
+          offscreen.width = this.canvas.width;
+          offscreen.height = this.canvas.height;
+          const offCtx = offscreen.getContext("2d");
+
+          // 绘制左侧图片
+          this.drawImage(
+            offCtx,
+            this.images[0],
+            this.scaledSizes[0],
+            this.dragState.leftOffset,
+            true
+          );
+
+          // 绘制右侧图片
+          this.drawImage(
+            offCtx,
+            this.images[1],
+            this.scaledSizes[1],
+            this.dragState.rightOffset,
+            false
+          );
+
+          // 应用边缘融合
+          this.applyEdgeBlending(offCtx);
+
+          // 将结果绘制到主画布
+          this.ctx.drawImage(offscreen, 0, 0);
+        }
+
+        drawImage(ctx, img, scaledSize, offset, isLeft) {
+          const { x, y } = offset;
+
+          // 计算绘制位置，考虑溢出和拖动偏移
+          const drawX = isLeft
+            ? x
+            : this.frameWidth + x - (scaledSize.width - this.frameWidth);
+          const drawY = y + (this.frameHeight - scaledSize.height) / 2;
+
+          ctx.save();
+
+          // 创建裁剪区域
+          ctx.beginPath();
+          if (isLeft) {
+            ctx.rect(0, 0, this.frameWidth, this.frameHeight);
+          } else {
+            ctx.rect(this.frameWidth, 0, this.frameWidth, this.frameHeight);
+          }
+          ctx.clip();
+
+          // 绘制图片
+          ctx.drawImage(
+            img,
+            0,
+            0,
+            img.width,
+            img.height,
+            drawX,
+            drawY,
+            scaledSize.width,
+            scaledSize.height
+          );
+
+          ctx.restore();
+        }
+
+        applyEdgeBlending(ctx) {
+          const overlapWidth = Math.floor(this.frameWidth * this.overlapRatio);
+          const centerX = this.frameWidth;
+
+          // 获取边缘区域的图像数据
+          const leftEdge = ctx.getImageData(
+            centerX - overlapWidth,
+            0,
+            overlapWidth,
+            this.frameHeight
+          );
+          const rightEdge = ctx.getImageData(
+            centerX,
+            0,
+            overlapWidth,
+            this.frameHeight
+          );
+
+          // 创建融合区域
+          const blendedEdge = ctx.createImageData(
+            overlapWidth * 2,
+            this.frameHeight
+          );
+
+          // 像素级别融合
+          for (let y = 0; y < this.frameHeight; y++) {
+            for (let x = 0; x < overlapWidth * 2; x++) {
+              const i = (y * overlapWidth * 2 + x) * 4;
+              const blendFactor = x / (overlapWidth * 2);
+
+              // 确定源像素位置
+              const leftI =
+                (y * overlapWidth + Math.min(x, overlapWidth - 1)) * 4;
+              const rightI =
+                (y * overlapWidth + Math.max(0, x - overlapWidth)) * 4;
+
+              // 对每个颜色通道进行融合
+              for (let j = 0; j < 3; j++) {
+                blendedEdge.data[i + j] = Math.round(
+                  leftEdge.data[leftI + j] * (1 - blendFactor) +
+                    rightEdge.data[rightI + j] * blendFactor
+                );
+              }
+              // 使用源图像的 Alpha 通道
+              blendedEdge.data[i + 3] = Math.round(
+                leftEdge.data[leftI + 3] * (1 - blendFactor) +
+                  rightEdge.data[rightI + 3] * blendFactor
+              );
+            }
+          }
+
+          // 绘制融合区域
+          ctx.putImageData(blendedEdge, centerX - overlapWidth, 0);
+        }
+
+        loadImage(src) {
+          return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = src;
+          });
+        }
+      }
+
+      // 使用示例
+      const container = document.querySelector(".container");
+      const blender = new ImageBlender(container);
+      blender.blend("./images/1.jpg", "./images/2.jpg").catch(console.error);
+    </script>
+  </body>
+</html>
