@@ -1,0 +1,18 @@
+/* styles.css:Canvas and Slider Styles */
+canvas {
+    border: 1px solid #ccc;
+}
+
+.slider-container {
+    margin: 20px;
+}
+
+.slider-container label {
+    margin-right: 10px;
+}
+
+.slider-container span {
+    margin-left: 10px;
+    min-width: 30px;
+    display: inline-block;
+}

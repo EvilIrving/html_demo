@@ -72,19 +72,40 @@
           // 计算图片缩放后的尺寸
           const [img1Scaled, img2Scaled] = [this.img1, this.img2].map((img) => {
             const imgRatio = img.width / img.height;
-            let scaledWidth, scaledHeight;
+            const frameRatio = frameWidth / frameHeight;
+            let scaledWidth, scaledHeight, cropWidth, cropHeight;
 
-            if (imgRatio > frameWidth / frameHeight) {
+            if (imgRatio > frameRatio) {
               // 横向图片，高度适应
               scaledHeight = frameHeight;
-              scaledWidth = frameHeight * imgRatio;
+              const heightScale = frameHeight / img.height;
+              scaledWidth = img.width * heightScale;
+
+              // 原始图片 高度不需要裁剪
+              cropHeight = img.height;
+              // 原始图片 宽度需要裁剪
+              cropWidth = img.width * frameRatio;
             } else {
               // 竖向图片，宽度适应
               scaledWidth = frameWidth;
-              scaledHeight = frameWidth / imgRatio;
+              const widthScale = frameWidth / img.width;
+              scaledHeight = img.height * widthScale;
+
+              // 原始图片 宽度不需要裁剪
+              cropWidth = img.width;
+              // 原始图片 高度需要裁剪
+              cropHeight = img.height * frameRatio;
             }
-            return { width: scaledWidth, height: scaledHeight };
+
+            return {
+              width: scaledWidth,
+              height: scaledHeight,
+              cropWidth,
+              cropHeight,
+            };
           });
+
+          console.log(img1Scaled, img2Scaled);
 
           // 优化重叠区域计算，确保像素对齐
           const scaleRatio = 1 + overlapRatio; // 缩放比例，例如 1.05
@@ -130,12 +151,14 @@
 
           // 绘制非重叠部分
           this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
           this.ctx.drawImage(
             canvas1,
             0,
             0,
             frameWidth,
             frameHeight,
+
             0,
             0,
             frameWidth,
@@ -144,15 +167,20 @@
 
           this.ctx.drawImage(
             canvas2,
+
             scaledFrameWidth - frameWidth,
             0,
             frameWidth,
             frameHeight,
+
             frameWidth,
             0,
             frameWidth,
             frameHeight
           );
+
+          document.body.appendChild(canvas1);
+          document.body.appendChild(canvas2);
 
           // 处理重叠区域
           const overlapRegion = this.ctx.createImageData(
@@ -216,8 +244,8 @@
       // 使用示例
       const canvas = document.getElementById("canvas");
       // 图片路径
-      const image1Src = "./images/22.jpg";
-      const image2Src = "./images/2.jpg";
+      const image1Src = "./blender/images/3.JPG";
+      const image2Src = "./blender/images/4.JPG";
       const blender = new ImageTrueBlender(canvas, image1Src, image2Src);
       const slider = document.getElementById("overlapSlider");
       const valueDisplay = document.getElementById("overlapValue");
@@ -225,9 +253,7 @@
       // 滑动条变化处理函数
       slider.addEventListener("input", function () {
         const value = this.value;
-        console.log(value);
-        // const overlapRatio = (value / 100) * 0.19 + 0.01; // 将1-100映射到0.01-0.2
-        // valueDisplay.textContent = `${value}%`;
+
         const overlapRatio = parseFloat(value);
         valueDisplay.textContent = `${overlapRatio}`;
         blender.blend(overlapRatio);
