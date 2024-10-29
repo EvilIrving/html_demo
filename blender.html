@@ -91,53 +91,33 @@
           const scaledFrameWidth = frameWidth * scaleRatio; // 缩放后的帧宽度
           const overlapWidth = scaledFrameWidth - frameWidth; // 实际重叠宽度
 
-          // 修改 canvas1 的尺寸和绘制
-          const canvas1 = document.createElement("canvas");
-          canvas1.width = scaledFrameWidth;
-          canvas1.height = frameHeight;
-          const ctx1 = canvas1.getContext("2d");
+          // 创建临时画布用于绘制放大后的图片
+          const createScaledCanvas = (img, scale) => {
+            const tempCanvas = document.createElement("canvas");
+            tempCanvas.width = scaledFrameWidth;
+            tempCanvas.height = frameHeight;
+            const tempCtx = tempCanvas.getContext("2d");
 
-          // 计算被放大的部分是多宽多高
-          const scaledWidth = img1Scaled.width * scaleRatio - img1Scaled.width;
-          const scaledHeight =
-            img1Scaled.height * scaleRatio - img1Scaled.height;
+            const scaledWidth = img.width * scale - img.width;
+            const scaledHeight = img.height * scale - img.height;
 
-          ctx1.drawImage(
-            this.img1,
-            // source Image 的 x,y 坐标, 和裁剪宽高
-            0,
-            0,
-            this.img1.width,
-            this.img1.height,
-            // target canvas 的 x,y 坐标, 和绘制宽高
-            0 - scaledWidth / 2,
-            0 - scaledHeight / 2,
-            img1Scaled.width * scaleRatio + scaledWidth / 2,
-            img1Scaled.height * scaleRatio + scaledHeight / 2
-          );
+            tempCtx.drawImage(
+              img,
+              0,
+              0,
+              img.width,
+              img.height,
+              -scaledWidth / 2,
+              -scaledHeight / 2,
+              img.width * scale + scaledWidth / 2,
+              img.height * scale + scaledHeight / 2
+            );
 
-          // 修改 canvas2 的尺寸和绘制
-          const canvas2 = document.createElement("canvas");
-          canvas2.width = scaledFrameWidth;
-          canvas2.height = frameHeight;
-          const ctx2 = canvas2.getContext("2d");
+            return tempCanvas;
+          };
 
-          // 计算被放大的部分是多宽多高
-          const scaledWidth2 = img2Scaled.width * scaleRatio - img2Scaled.width;
-          const scaledHeight2 =
-            img2Scaled.height * scaleRatio - img2Scaled.height;
-
-          ctx2.drawImage(
-            this.img2,
-            0,
-            0,
-            this.img2.width,
-            this.img2.height,
-            0 - scaledWidth2 / 2,
-            0 - scaledHeight2 / 2,
-            img2Scaled.width * scaleRatio + scaledWidth2 / 2,
-            img2Scaled.height * scaleRatio + scaledHeight2 / 2
-          );
+          const canvas1 = createScaledCanvas(this.img1, scaleRatio);
+          const canvas2 = createScaledCanvas(this.img2, scaleRatio);
 
           // 调整绘制位置
           const img2StartX = frameWidth - overlapWidth;
@@ -175,31 +155,47 @@
           );
 
           // 获取重叠区域的像素数据
-          const img1Data = ctx1.getImageData(
-            frameWidth - overlapWidth,
-            0,
-            overlapWidth,
-            frameHeight
-          );
-          const img2Data = ctx2.getImageData(0, 0, overlapWidth, frameHeight);
+          const img1Data = canvas1
+            .getContext("2d")
+            .getImageData(
+              frameWidth - overlapWidth,
+              0,
+              overlapWidth,
+              frameHeight
+            );
+          const img2Data = canvas2
+            .getContext("2d")
+            .getImageData(0, 0, overlapWidth, frameHeight);
 
-          // 像素级别的融合
-          for (let i = 0; i < overlapRegion.data.length; i += 4) {
-            const x = Math.floor((i / 4) % overlapWidth);
-            const blendFactor = x / overlapWidth; // 从左到右的渐变因子
+          // 使用 Smoothstep 函数优化融合过渡
+          const smoothstep = (edge0, edge1, x) => {
+            const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
+            return t * t * (3 - 2 * t);
+          };
 
-            // 对每个颜色通道进行融合
-            for (let j = 0; j < 3; j++) {
-              const idx = i + j;
-              overlapRegion.data[idx] = Math.round(
-                img1Data.data[idx] * (1 - blendFactor) +
-                  img2Data.data[idx] * blendFactor
-              );
+          // 优化像素融合算法
+          for (let y = 0; y < frameHeight; y++) {
+            for (let x = 0; x < overlapWidth; x++) {
+              const i = (y * overlapWidth + x) * 4;
+
+              // 使用 smoothstep 计算混合因子
+              const blendFactor = smoothstep(0, overlapWidth - 1, x);
+
+              // 优化色彩空间转换和融合
+              for (let c = 0; c < 3; c++) {
+                const idx = i + c;
+                // 使用 gamma 校正进行线性插值
+                const color1 = Math.pow(img1Data.data[idx] / 255, 2.2);
+                const color2 = Math.pow(img2Data.data[idx] / 255, 2.2);
+                const blendedColor =
+                  color1 * (1 - blendFactor) + color2 * blendFactor;
+                overlapRegion.data[idx] = Math.round(
+                  Math.pow(blendedColor, 1 / 2.2) * 255
+                );
+              }
+              overlapRegion.data[i + 3] = 255; // Alpha 通道
             }
-            // Alpha通道
-            overlapRegion.data[i + 3] = 255;
           }
-
           // 将融合后的重叠区域绘制到主画布
           this.ctx.putImageData(overlapRegion, img2StartX, 0);
         }
