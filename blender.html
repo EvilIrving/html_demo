@@ -16,9 +16,9 @@
       <input
         type="range"
         id="overlapSlider"
-        min="0.1"
+        min="0.01"
         max="0.3"
-        step="0.02"
+        step="0.01"
         value="0.16"
       />
       <span id="overlapValue">16%</span>
@@ -86,10 +86,10 @@
             return { width: scaledWidth, height: scaledHeight };
           });
 
-          // 修改重叠计算逻辑
+          // 优化重叠区域计算，确保像素对齐
           const scaleRatio = 1 + overlapRatio; // 缩放比例，例如 1.05
-          const scaledFrameWidth = frameWidth * scaleRatio; // 缩放后的帧宽度
-          const overlapWidth = scaledFrameWidth - frameWidth; // 实际重叠宽度
+          const scaledFrameWidth = Math.round(frameWidth * scaleRatio); // 缩放后的帧宽度
+          const overlapWidth = Math.round(scaledFrameWidth - frameWidth); // 实际重叠宽度
 
           // 创建临时画布用于绘制放大后的图片
           const createScaledCanvas = (img, scale) => {
@@ -117,7 +117,13 @@
           };
 
           const canvas1 = createScaledCanvas(this.img1, scaleRatio);
+          const canvas1Ctx = canvas1.getContext("2d");
+          canvas1Ctx.imageSmoothingEnabled = true;
+          canvas1Ctx.imageSmoothingQuality = "high";
           const canvas2 = createScaledCanvas(this.img2, scaleRatio);
+          const canvas2Ctx = canvas2.getContext("2d");
+          canvas2Ctx.imageSmoothingEnabled = true;
+          canvas2Ctx.imageSmoothingQuality = "high";
 
           // 调整绘制位置
           const img2StartX = frameWidth - overlapWidth;
@@ -167,36 +173,33 @@
             .getContext("2d")
             .getImageData(0, 0, overlapWidth, frameHeight);
 
-          // 使用 Smoothstep 函数优化融合过渡
-          const smoothstep = (edge0, edge1, x) => {
-            const t = Math.max(0, Math.min(1, (x - edge0) / (edge1 - edge0)));
-            return t * t * (3 - 2 * t);
+          // 使用余弦函数创建平滑的过渡
+          const cosineInterpolation = (x) => {
+            return (1 - Math.cos(x * Math.PI)) / 2;
           };
 
-          // 优化像素融合算法
+          // 优化的像素融合算法
           for (let y = 0; y < frameHeight; y++) {
             for (let x = 0; x < overlapWidth; x++) {
               const i = (y * overlapWidth + x) * 4;
 
-              // 使用 smoothstep 计算混合因子
-              const blendFactor = smoothstep(0, overlapWidth - 1, x);
+              // 使用余弦插值计算混合因子
+              const blendFactor = cosineInterpolation(x / (overlapWidth - 1));
 
-              // 优化色彩空间转换和融合
+              // 在 RGB 空间直接进行插值，避免 gamma 校正带来的问题
               for (let c = 0; c < 3; c++) {
                 const idx = i + c;
-                // 使用 gamma 校正进行线性插值
-                const color1 = Math.pow(img1Data.data[idx] / 255, 2.2);
-                const color2 = Math.pow(img2Data.data[idx] / 255, 2.2);
-                const blendedColor =
-                  color1 * (1 - blendFactor) + color2 * blendFactor;
+                const color1 = img1Data.data[idx];
+                const color2 = img2Data.data[idx];
+
+                // 使用加权平均进行颜色混合
                 overlapRegion.data[idx] = Math.round(
-                  Math.pow(blendedColor, 1 / 2.2) * 255
+                  color1 * (1 - blendFactor) + color2 * blendFactor
                 );
               }
-              overlapRegion.data[i + 3] = 255; // Alpha 通道
+              overlapRegion.data[i + 3] = 255;
             }
           }
-          // 将融合后的重叠区域绘制到主画布
           this.ctx.putImageData(overlapRegion, img2StartX, 0);
         }
 
@@ -213,7 +216,7 @@
       // 使用示例
       const canvas = document.getElementById("canvas");
       // 图片路径
-      const image1Src = "./images/1.jpg";
+      const image1Src = "./images/22.jpg";
       const image2Src = "./images/2.jpg";
       const blender = new ImageTrueBlender(canvas, image1Src, image2Src);
       const slider = document.getElementById("overlapSlider");
