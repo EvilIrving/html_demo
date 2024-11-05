@@ -62,36 +62,71 @@
         code: "",
         logs: [],
 
+        code: "",
+        logs: [],
+
         // 运行代码
         runCode() {
           try {
-            // 重写 console.log
-            const originalLog = console.log;
-            console.log = (...args) => {
-              this.logs.push({
-                type: "output",
-                content: args
-                  .map((arg) =>
-                    typeof arg === "object" ? JSON.stringify(arg) : arg
-                  )
-                  .join(" "),
-              });
-              originalLog.apply(console, args);
+            // 创建一个模拟的 console 对象
+            const fakeConsole = {
+              log: (...args) => {
+                this.logs.push({
+                  type: "output",
+                  content: args
+                    .map((arg) =>
+                      typeof arg === "object"
+                        ? JSON.stringify(arg)
+                        : String(arg)
+                    )
+                    .join(" "),
+                });
+              },
+              error: (...args) => {
+                this.logs.push({
+                  type: "error",
+                  content: args
+                    .map((arg) =>
+                      typeof arg === "object"
+                        ? JSON.stringify(arg)
+                        : String(arg)
+                    )
+                    .join(" "),
+                });
+              },
+              warn: (...args) => {
+                this.logs.push({
+                  type: "warning",
+                  content: args
+                    .map((arg) =>
+                      typeof arg === "object"
+                        ? JSON.stringify(arg)
+                        : String(arg)
+                    )
+                    .join(" "),
+                });
+              },
             };
 
+            // 将代码包装在函数中，注入模拟的 console
+            const wrappedCode = `
+                        (function(console) {
+                            ${this.code}
+                        })(fakeConsole)
+                    `;
+
             // 执行代码
-            const result = eval(this.code);
+            const result = eval(wrappedCode);
 
             // 如果有返回值，显示返回值
             if (result !== undefined) {
               this.logs.push({
                 type: "success",
-                content: `=> ${result}`,
+                content: `=> ${
+                  typeof result === "object" ? JSON.stringify(result) : result
+                }`,
               });
             }
-
-            // 恢复原始 console.log
-            console.log = originalLog;
           } catch (error) {
             this.logs.push({
               type: "error",
