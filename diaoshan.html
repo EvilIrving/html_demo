@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D Ceiling Fan</title>
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        margin: 0;
+        background-color: #f0f0f0;
+        perspective: 800px;
+      }
+
+      .fan-container {
+        width: 200px;
+        height: 200px;
+        position: relative;
+        transform-style: preserve-3d;
+      }
+
+      .fan-body {
+        width: 40px;
+        height: 40px;
+        background-color: #ccc;
+        border-radius: 50%;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      }
+
+      .blade {
+        width: 120px;
+        height: 20px;
+        background-color: #ddd;
+        border-radius: 5px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: 0 50%;
+        transform-style: preserve-3d;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      }
+
+      .blade:nth-child(1) {
+        transform: rotateZ(0deg) translateX(-50%);
+      }
+
+      .blade:nth-child(2) {
+        transform: rotateZ(120deg) translateX(-50%);
+      }
+
+      .blade:nth-child(3) {
+        transform: rotateZ(240deg) translateX(-50%);
+      }
+
+      .button {
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        margin-top: 20px;
+      }
+
+      .button:hover {
+        background-color: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fan-container" id="fan">
+      <div class="fan-body"></div>
+      <div class="blade"></div>
+      <div class="blade"></div>
+      <div class="blade"></div>
+    </div>
+    <button class="button" id="toggleButton">Turn On</button>
+
+    <script>
+      const fan = document.getElementById("fan");
+      const toggleButton = document.getElementById("toggleButton");
+      let isRunning = false;
+      let rotation = 0;
+      let animationFrame;
+
+      function rotateFan() {
+        rotation = (rotation + 3) % 360; // Increment rotation
+        fan.style.transform = `rotateZ(${rotation}deg)`;
+        animationFrame = requestAnimationFrame(rotateFan);
+      }
+
+      toggleButton.addEventListener("click", () => {
+        if (isRunning) {
+          cancelAnimationFrame(animationFrame);
+          toggleButton.textContent = "Turn On";
+        } else {
+          rotateFan();
+          toggleButton.textContent = "Turn Off";
+        }
+        isRunning = !isRunning;
+      });
+    </script>
+  </body>
+</html>
