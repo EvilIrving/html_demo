@@ -1,114 +1,156 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>3D Ceiling Fan</title>
     <style>
-      body {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        margin: 0;
-        background-color: #f0f0f0;
-        perspective: 800px;
-      }
-
       .fan-container {
-        width: 200px;
-        height: 200px;
+        width: 400px;
+        height: 400px;
         position: relative;
-        transform-style: preserve-3d;
+
+        margin: 50px auto;
+        perspective: 2000px;
       }
 
-      .fan-body {
-        width: 40px;
-        height: 40px;
-        background-color: #ccc;
+      .ceiling-mount {
+        width: 20px;
+        height: 60px;
+        background-color: white;
+        position: absolute;
+        left: 50%;
+
+        transform: translateX(-50%);
+        top: 0;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .fan-mount {
+        width: 60px;
+        height: 60px;
+        background-color: white;
         border-radius: 50%;
         position: absolute;
-        top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        top: 60px;
+        transform: translateX(-50%);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transform: translateX(-50%) rotate(0deg) rotateX(60deg);
+      }
+
+      .fan-light {
+        width: 120px;
+        height: 120px;
+        background-color: white;
+        border-radius: 50%;
+        position: absolute;
+        left: 50%;
+        top: 65px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transform: translateX(-50%) rotateX(60deg);
+        animation: rotateFanLight 5s linear infinite;
+        animation-play-state: paused;
+      }
+
+      .blades {
+        width: 300px;
+        height: 300px;
+        position: absolute;
+        left: 50%;
+        top: 100px;
+        transform-style: preserve-3d;
+        transform: translateX(-50%);
       }
 
       .blade {
-        width: 120px;
-        height: 20px;
-        background-color: #ddd;
-        border-radius: 5px;
         position: absolute;
-        top: 50%;
+        width: 80px;
+        height: 200px;
+        background-color: rgb(223, 30, 30);
         left: 50%;
-        transform-origin: 0 50%;
-        transform-style: preserve-3d;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        top: 50%;
+        transform-origin: center -60px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transform: translateX(-50%) translateY(-50%) rotateX(60deg)
+          rotateY(-15deg);
+        animation: rotateBlade 5s linear infinite;
+        animation-play-state: paused;
       }
 
-      .blade:nth-child(1) {
-        transform: rotateZ(0deg) translateX(-50%);
+      @keyframes rotateFanLight {
+        from {
+          transform: translateX(-50%) rotateX(60deg) rotate(0deg);
+        }
+        to {
+          transform: translateX(-50%) rotateX(60deg) rotate(360deg);
+        }
       }
 
-      .blade:nth-child(2) {
-        transform: rotateZ(120deg) translateX(-50%);
+      @keyframes rotateBlade {
+        from {
+          transform: translateX(-50%) translateY(-31%) rotateX(60deg)
+            rotateY(0deg) rotate(0deg);
+        }
+        to {
+          transform: translateX(-50%) translateY(-31%) rotateX(60deg)
+            rotateY(10deg) rotate(360deg);
+        }
       }
 
-      .blade:nth-child(3) {
-        transform: rotateZ(240deg) translateX(-50%);
+      .controls {
+        text-align: center;
+        margin-top: 100px;
       }
 
-      .button {
-        padding: 10px 20px;
-        font-size: 16px;
-        background-color: #007bff;
+      button {
+        padding: 8px 16px;
+        margin: 0 4px;
+        cursor: pointer;
+        background-color: #4caf50;
         color: white;
         border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s;
-        margin-top: 20px;
+        border-radius: 4px;
       }
 
-      .button:hover {
-        background-color: #0056b3;
+      button:hover {
+        background-color: #45a049;
       }
     </style>
   </head>
   <body>
-    <div class="fan-container" id="fan">
-      <div class="fan-body"></div>
-      <div class="blade"></div>
-      <div class="blade"></div>
-      <div class="blade"></div>
+    <div class="fan-container">
+      <div class="ceiling-mount"></div>
+      <div class="fan-mount"></div>
+      <div class="fan-light"></div>
+      <div class="blades">
+        <div class="blade"></div>
+      </div>
     </div>
-    <button class="button" id="toggleButton">Turn On</button>
+    <div class="controls">
+      <button onclick="changeFanSpeed('off')">关闭</button>
+      <button onclick="changeFanSpeed('low')">低速</button>
+      <button onclick="changeFanSpeed('medium')">中速</button>
+      <button onclick="changeFanSpeed('high')">高速</button>
+    </div>
 
     <script>
-      const fan = document.getElementById("fan");
-      const toggleButton = document.getElementById("toggleButton");
-      let isRunning = false;
-      let rotation = 0;
-      let animationFrame;
+      const blades = document.querySelector(".blades");
 
-      function rotateFan() {
-        rotation = (rotation + 3) % 360; // Increment rotation
-        fan.style.transform = `rotateZ(${rotation}deg)`;
-        animationFrame = requestAnimationFrame(rotateFan);
+      function changeFanSpeed(speed) {
+        const speeds = {
+          off: { duration: 0, playState: "paused" },
+          low: { duration: 5, playState: "running" },
+          medium: { duration: 3, playState: "running" },
+          high: { duration: 1, playState: "running" },
+        };
+
+        const settings = speeds[speed];
+        const fanLight = document.querySelector(".fan-light");
+        const blade = document.querySelector(".blade");
+
+        fanLight.style.animationDuration = `${settings.duration}s`;
+        fanLight.style.animationPlayState = settings.playState;
+        blade.style.animationDuration = `${settings.duration}s`;
+        blade.style.animationPlayState = settings.playState;
       }
-
-      toggleButton.addEventListener("click", () => {
-        if (isRunning) {
-          cancelAnimationFrame(animationFrame);
-          toggleButton.textContent = "Turn On";
-        } else {
-          rotateFan();
-          toggleButton.textContent = "Turn Off";
-        }
-        isRunning = !isRunning;
-      });
     </script>
   </body>
 </html>

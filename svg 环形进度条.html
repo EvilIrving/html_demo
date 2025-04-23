@@ -29,7 +29,9 @@
         --percent: 50;
         --circumference: calc(2 * 3.1415 * 40); /* 根据半径计算周长 */
         stroke-dasharray: var(--circumference);
-        stroke-dashoffset: calc(var(--circumference) - (var(--percent) / 100) * var(--circumference));
+        stroke-dashoffset: calc(
+          var(--circumference) - (var(--percent) / 100) * var(--circumference)
+        );
 
         stroke: #7856d7; /* 主色 */
         stroke-width: 10;
