@@ -80,7 +80,7 @@ class RulerPicker {
 
     // --- Event Handlers ---
 
-    // 开始拖拽时记录起始位置
+    
     handleDragStart(event) {
         if (this.animationFrameId) {
             cancelAnimationFrame(this.animationFrameId); // Stop snapping animation
@@ -287,15 +287,15 @@ class RulerPicker {
         }
 
 
-        // // --- Draw Center Indicator ---
-        // const indicatorYStart = canvasHeight * 0.1; // Make indicator taller
-        // const indicatorHeight = canvasHeight * 0.4;
-        // ctx.beginPath();
-        // ctx.strokeStyle = this.config.indicatorColor;
-        // ctx.lineWidth = 2; // Make indicator thicker
-        // ctx.moveTo(center, indicatorYStart);
-        // ctx.lineTo(center, indicatorYStart + indicatorHeight);
-        // ctx.stroke();
+        // --- Draw Center Indicator ---
+        const indicatorYStart = canvasHeight * 0.1; // Make indicator taller
+        const indicatorHeight = canvasHeight * 0.4;
+        ctx.beginPath();
+        ctx.strokeStyle = this.config.indicatorColor;
+        ctx.lineWidth = 2; // Make indicator thicker
+        ctx.moveTo(center, indicatorYStart);
+        ctx.lineTo(center, indicatorYStart + indicatorHeight);
+        ctx.stroke();
     }
 
     // --- Utility ---
