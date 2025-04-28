@@ -1,58 +1,102 @@
-class Watch {
-  constructor(selector) {
-    this.canvas = document.getElementById(selector);
-    this.ctx = canvas.getContext("2d");
-    this.width = null;
-    this.height = null;
+let canvas = document.getElementById("watch-container");
+let ctx = canvas.getContext("2d");
+function animate() {
+  const now = new Date();
+  const h = now.getHours() % 12;
+  const m = now.getMinutes();
+  const s = now.getSeconds();
+
+  ctx.save();
+  ctx.clearRect(0, 0, 500, 500);
+  ctx.translate(250, 250);
+  ctx.rotate(-Math.PI / 2);
+
+  //   画 小时刻度
+  ctx.storkeStyle = "black";
+  ctx.lineWidth = 5;
+  ctx.lineCap = "round";
+  ctx.save();
+  for (let i = 0; i < 12; i++) {
+    ctx.rotate(Math.PI / 6);
+    ctx.beginPath();
+    ctx.moveTo(140, 0);
+    ctx.lineTo(120, 0);
+    ctx.stroke();
   }
 
-  init() {
-    const canvas = this.canvas;
-    const ctx = this.ctx;
+  ctx.restore();
+  ctx.save();
 
-    const dpi = window.devicePixelRatio;
-    this.width = canvas.width * dpi;
-    this.height = canvas.height * dpi;
-    canvas.width = this.width;
-    canvas.height = this.height;
-    ctx.scale(dpi, dpi);
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate(-Math.PI / 2);
+  // 画 分钟刻度
+  ctx.lineWidth = 3;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "black";
+  for (let i = 0; i < 60; i++) {
+    // if (i % 5 === 0) return;
+    ctx.rotate(Math.PI / 30);
+    ctx.beginPath();
+    ctx.moveTo(140, 0);
+    ctx.lineTo(130, 0);
+    ctx.stroke();
   }
+  ctx.restore();
 
-  drawWatch() {
-    // 计算当前时间
-    const now = new Date();
-    const h = now.getHours();
-    const m = now.getMinutes();
-    const s = now.getSeconds();
-    const ctx = this.ctx;
+  //   画时针 分针 秒针
+  ctx.save();
+  //   计算时针旋转角度
+  const hDeg =
+    h * (Math.PI / 6) + m * (Math.PI / 6 / 60) + s * (Math.PI / 60 / 60 / 6);
+  ctx.lineWidth = 8;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "black";
+  ctx.beginPath();
+  ctx.rotate(hDeg);
+  ctx.moveTo(-20, 0);
+  ctx.lineTo(100, 0);
+  ctx.stroke();
+  ctx.restore();
 
-    ctx.save();
-    ctx.clearRect(-this.width / 2, -this.height / 2, this.width, this.height);
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 5;
-    ctx.lineCap = "round";
+  ctx.save();
+  const mDeg = m * (Math.PI / 60) + s * (Math.PI / 60 / 6);
+  ctx.lineWidth = 7;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "green";
+  ctx.beginPath();
+  ctx.rotate(mDeg);
+  ctx.moveTo(-20, 0);
+  ctx.lineTo(100, 0);
+  ctx.stroke();
+  ctx.restore();
 
-    // 画表盘
-    ctx.save();
-    for (let i = 0; i < 12; i++) {
-      ctx.beginPath();
-      ctx.moveTo(100, 0);
-      ctx.lineTo(150, 0);
-      ctx.stroke();
-    }
-    ctx.restore();
+  ctx.save();
+  const sDeg = s * (Math.PI / 60);
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "blue";
+  ctx.beginPath();
+  ctx.rotate(sDeg);
+  ctx.moveTo(-20, 0);
+  ctx.lineTo(100, 0);
+  ctx.stroke();
+  ctx.restore();
 
-    ctx.restore();
-  }
-
-  animate() {
-    this.drawWatch();
-    window.requestAnimationFrame(animate);
-  }
+  //   中心圆
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(0, 0, 10, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.fillStyle = "red";
+  ctx.fill();
+  ctx.restore();
+  ctx.restore();
+  window.requestAnimationFrame(animate);
 }
-
-const watch = new Watch("watch-container");
-watch.init();
-watch.animate();
+function init() {
+  // 解决retina screen
+  const dpi = window.devicePixelRatio;
+  canvas.width = 500 * dpi;
+  canvas.height = 500 * dpi;
+  ctx.scale(dpi, dpi);
+}
+init();
+window.requestAnimationFrame(animate);
