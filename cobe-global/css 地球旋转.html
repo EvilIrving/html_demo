@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=0"
+    />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+
+    <style>
+      body {
+        background-color: transparent;
+        height: 100vh;
+        width: 100vw;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #earth {
+        width: 400px;
+        height: 400px;
+        /* background: url(https://im.gurl.eu.org/file/e9a5067e58a1ba3f54b4d.png); */
+        /* background: url(https://im.gurl.eu.org/file/a6658146b3ffbc49af26a.png); */
+        background: url(./world.png);
+        border-radius: 50%;
+        background-size: 820px;
+        box-shadow: inset 16px 0 40px 6px rgb(0, 0, 0),
+          inset -3px 0 6px 2px rgba(255, 255, 255, 0.2);
+        animation-name: rotate;
+        animation-duration: 8s;
+        animation-iteration-count: infinite;
+        animation-timing-function: linear;
+      }
+
+      @keyframes rotate {
+        from {
+          background-position-x: 0px;
+        }
+        to {
+          background-position-x: 820px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="earth" style="background-color: orange"></div>
+  </body>
+</html>

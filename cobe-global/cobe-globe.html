@@ -23,10 +23,18 @@
   <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+      
+      //  * 参考：
+      //  * https://www.eldoraui.site/docs/components/cobe-globe
+      //  * https://codesandbox.io/p/sandbox/cobe-globe-eilqhj?file=%2Fpackage.json
+       
       // 创建场景
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
-      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // 启用透明度支持
+      const renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+      }); // 启用透明度支持
       renderer.setSize(400, 400);
       document.body.appendChild(renderer.domElement);
 
@@ -35,9 +43,7 @@
 
       // 创建纹理并加载纹理图像
       const textureLoader = new THREE.TextureLoader();
-      const texture = textureLoader.load(
-        "./images/world.png"
-      );
+      const texture = textureLoader.load("./world.png");
 
       // 将纹理应用到材质上
       const material = new THREE.MeshBasicMaterial({ map: texture });

@@ -227,7 +227,10 @@
           );
 
           // 创建融合区域
-          const blendedEdge = ctx.createImageData(overlapWidth, this.frameHeight);
+          const blendedEdge = ctx.createImageData(
+            overlapWidth,
+            this.frameHeight
+          );
 
           // 像素级别融合
           for (let i = 0; i < blendedEdge.data.length; i += 4) {
@@ -239,13 +242,13 @@
               const idx = i + j;
               blendedEdge.data[idx] = Math.round(
                 leftEdge.data[idx] * (1 - blendFactor) +
-                rightEdge.data[idx] * blendFactor
+                  rightEdge.data[idx] * blendFactor
               );
             }
             // Alpha通道
             blendedEdge.data[i + 3] = Math.round(
               leftEdge.data[i + 3] * (1 - blendFactor) +
-              rightEdge.data[i + 3] * blendFactor
+                rightEdge.data[i + 3] * blendFactor
             );
           }
 
