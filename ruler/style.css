@@ -14,7 +14,7 @@ body {
     width: 90%;
     max-width: 500px;
     background-color: #fff;
-    padding: 20px 0;
+    padding: 0 0;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     text-align: center;
@@ -39,7 +39,7 @@ body {
 #rulerCanvas {
     display: block;
     width: 100%; /* Make canvas responsive within the container */
-    height: 80px; /* Fixed height for the ruler */
+    height: 120px; /* Fixed height for the ruler */
     cursor: grab;
 }
 

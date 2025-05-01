@@ -11,36 +11,37 @@
   </head>
   <body>
     <div class="ruler-container">
-      <div class="value-display">
-        <span id="current-value">0.0</span>
-        <span id="unit">kg</span>
-      </div>
       <canvas id="rulerCanvas"></canvas>
     </div>
 
-    <script src="ruler.js"></script>
+    <script src="test.ruler.js"></script>
     <script>
       // --- Configuration ---
       const rulerElement = document.getElementById("rulerCanvas");
       const valueElement = document.getElementById("current-value");
       const unitElement = document.getElementById("unit");
 
-      const ruler = new RulerPicker(rulerElement, {
-        min: 0,
-        max: 30,
-        initialValue: 17.1, // Or any starting value
-        unit: "m",
-        tickInterval: 0.1,
-        majorTickInterval: 1, // show major tick every interval unit
-        pixelsPerUnit: 50, // How many pixels represent 1 unit (e.g., 1kg)
-        onChange: (value) => {
-          valueElement.textContent = value.toFixed(1); // Update displayed value
-          console.log("Selected value:", value);
-        },
-        onUnitChange: (unit) => {
-          unitElement.textContent = unit;
-        },
-      });
+      const ruler = new RulerPicker(rulerElement);
+
+      // const ruler = new RulerPicker(rulerElement, {
+      //   min: 0,
+      //   max: 20,
+      //   initialValue: 7.1, // Or any starting value
+      //   unit: "kg",
+      //   tickInterval: 0.1,
+      //   majorTickInterval: 1,
+      //   pixelsPerUnit: 80, // How many pixels represent 1 unit (e.g., 1kg)
+      //   onChange: (value) => {
+      //     valueElement.textContent = value.toFixed(1); // Update displayed value
+      //     console.log("Selected value:", value);
+      //   },
+      //   onUnitChange: (unit) => {
+      //     unitElement.textContent = unit;
+      //   },
+      // });
+
+      //  * 参考 https://100px.net/usage/wx.html 如何封装为多个平台组件
+      //  * 参考 https://www.yuque.com/nowthen/longroad/dv2705#weuhP 了解有哪些问题
     </script>
   </body>
 </html>
