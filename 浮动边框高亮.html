@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>浮动边框高亮效果</title>
     <style>
       * {
         margin: 0;
@@ -41,6 +41,11 @@
         align-items: center;
         position: relative;
         overflow: hidden;
+        transition: transform 0.2s ease;
+      }
+
+      section:hover {
+        transform: scale(1.02);
       }
 
       section::before {
@@ -49,13 +54,14 @@
         inset: 0;
         border-radius: inherit;
         background: radial-gradient(
-          circle at 50% 50%,
+          circle at var(--x, 50%) var(--y, 50%),
           rgba(255, 0, 0, 0.7) 0%,
           rgba(0, 0, 255, 0.6) 20%,
           rgba(0, 0, 255, 0) 70%,
           rgba(0, 0, 0, 0) 100%
         );
-        transform: translate(var(--x, -10000px), var(--y, -10000px));
+        opacity: var(--opacity, 0);
+        transition: opacity 0.3s ease;
       }
 
       .inner {
@@ -73,85 +79,16 @@
   </head>
   <body>
     <div id="app">
-      <div class="wrapper">
-        <section>
+      <div
+        class="wrapper"
+        ref="wrapper"
+        @mousemove="handleMouseMove"
+        @mouseenter="handleMouseEnter"
+        @mouseleave="handleMouseLeave"
+      >
+        <section v-for="(item, index) in 16" :key="index" :data-index="index">
           <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
-          </div>
-        </section>
-        <section>
-          <div class="inner">
-            <h3>lorem</h3>
+            <h3>卡片 {{ index + 1 }}</h3>
           </div>
         </section>
       </div>
@@ -163,37 +100,49 @@
 
     createApp({
       setup() {
-        const moveBind = (e, ele) => {
-          // 获取当前元素相对于视口的位置
-          const rect = ele.getBoundingClientRect();
+        const wrapper = ref(null);
+        // 获取所有卡片
 
-          console.log(rect, "tect");
+        const handleMouseMove = (e) => {
+          const cards = document.querySelectorAll("section");
+          // 获取鼠标当前位置
+          const mouseX = e.clientX;
+          const mouseY = e.clientY;
 
-          const x = e.clientX - rect.left - rect.width / 2;
-          const y = e.clientY - rect.top - rect.height / 2;
-          ele.style.setProperty("--x", x + "px");
-          ele.style.setProperty("--y", y + "px");
+          // 遍历每个卡片，检查鼠标是否在卡片上方
+          cards.forEach((card) => {
+            const rect = card.getBoundingClientRect();
+
+            // 计算鼠标相对于卡片的位置（百分比）
+            const x = ((mouseX - rect.left) / rect.width) * 100 + "%";
+            const y = ((mouseY - rect.top) / rect.height) * 100 + "%";
+
+            // 设置渐变的中心点
+            card.style.setProperty("--x", x);
+            card.style.setProperty("--y", y);
+          });
         };
 
-        onMounted(() => {
-          const wrapperEle = document.querySelector(".wrapper");
+        const handleMouseEnter = (e) => {
           const cards = document.querySelectorAll("section");
-
-          wrapperEle.addEventListener("mousemove", (e) => {
-            for (const card of cards) {
-              moveBind(e, card);
-            }
+          cards.forEach((card) => {
+            card.style.setProperty("--opacity", "1");
           });
-        });
+        };
 
-        onUnmounted(() => {
-          //   const wrapperEle = document.querySelector(".wrapper");
-          //   wrapperEle.forEach((ele) =>
-          //     ele.removeEventListener("mousemove", moveBind)
-          //   );
-        });
+        const handleMouseLeave = (e) => {
+          const cards = document.querySelectorAll("section");
+          cards.forEach((card) => {
+            card.style.setProperty("--opacity", "0");
+          });
+        };
 
-        return {};
+        return {
+          wrapper,
+          handleMouseMove,
+          handleMouseEnter,
+          handleMouseLeave,
+        };
       },
     }).mount("#app");
   </script>
