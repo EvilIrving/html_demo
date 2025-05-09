@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/xe-utils"></script>
+  </head>
+  <body>
+    <script>
+      /**
+       * 使用 XEUtils 根据目标ID筛选树形结构的函数
+       * @param {Array} tree - 原始树形结构数据
+       * @param {String} targetId - 目标节点ID
+       * @returns {Array} - 过滤后的树形结构
+       */
+      function filterTreeByIds(tree, targetId) {
+        // 深拷贝原始树
+        const clonedTree = XEUtils.clone(tree, true);
+
+        // 记录路径，用于后续处理
+        let targetPath = [];
+        let found = false;
+
+        /**
+         * 查找目标节点的路径
+         * @param {Object} node - 当前节点
+         * @param {Array} path - 当前路径
+         * @returns {Boolean} - 是否找到目标节点
+         */
+        function findPath(node, path) {
+          // 如果已经找到，直接返回
+          if (found) return true;
+
+          // 检查当前节点
+          if (node.id === targetId) {
+            targetPath = [...path, node.id];
+            found = true;
+            return true;
+          }
+
+          // 递归检查子节点
+          if (node.children && node.children.length > 0) {
+            for (const child of node.children) {
+              if (findPath(child, [...path, node.id])) {
+                return true;
+              }
+            }
+          }
+
+          return false;
+        }
+
+        /**
+         * 根据目标路径过滤树
+         * @param {Object} node - 当前节点
+         * @param {Array} currentPath - 当前路径
+         * @param {Number} depth - 当前深度
+         * @returns {Boolean} - 节点是否在目标路径上或为目标节点
+         */
+        function filterByPath(node, currentPath, depth) {
+          // 当前节点是否在目标路径上
+          const isInPath = targetPath.includes(node.id);
+
+          // 是目标节点的情况
+          if (node.id === targetId) {
+            return true;
+          }
+
+          // 处理子节点
+          if (node.children && node.children.length > 0) {
+            const nextPath = [...currentPath, node.id];
+            const nextDepth = depth + 1;
+
+            // 如果当前节点在路径上，保留所有子节点，但需要递归处理子节点的子节点
+            if (isInPath) {
+              XEUtils.each(node.children, (child) => {
+                filterByPath(child, nextPath, nextDepth);
+              });
+              return true;
+            }
+            // 否则，过滤子节点
+            else {
+              const filteredChildren = XEUtils.filter(node.children, (child) =>
+                filterByPath(child, nextPath, nextDepth)
+              );
+
+              // 更新子节点列表
+              node.children = filteredChildren;
+
+              // 如果有匹配的子节点，保留当前节点
+              return filteredChildren.length > 0;
+            }
+          }
+
+          // 叶子节点：如果是目标节点则保留，否则根据是否在路径上决定
+          return node.id === targetId || isInPath;
+        }
+
+        // 首先找到目标节点的路径
+        for (const topNode of clonedTree) {
+          if (findPath(topNode, [])) {
+            break;
+          }
+        }
+
+        // 根据找到的路径过滤树
+        return XEUtils.map(clonedTree, (topNode) => {
+          const isTopNodeInPath = targetPath.includes(topNode.id);
+
+          // 顶层节点总是保留，但需要处理其子节点
+          if (isTopNodeInPath) {
+            // 如果顶层节点在路径上，递归处理其子节点
+            XEUtils.each(topNode.children, (child) => {
+              filterByPath(child, [topNode.id], 1);
+            });
+          } else {
+            // 顶层节点不在路径上，过滤其子节点
+            const filteredChildren = XEUtils.filter(topNode.children, (child) =>
+              filterByPath(child, [topNode.id], 1)
+            );
+
+            // 如果没有匹配的子节点，清空子节点列表
+            if (filteredChildren.length === 0) {
+              topNode.children = [];
+            } else {
+              topNode.children = filteredChildren;
+            }
+          }
+
+          return topNode;
+        });
+      }
+
+      /**
+       * 使用 XEUtils 根据目标ID筛选树形结构的函数
+       * @param {Array} tree - 原始树形结构数据
+       * @param {String} targetId - 目标节点ID
+       * @returns {Array} - 过滤后的树形结构
+       */
+      function filterTreeById(tree, targetId) {
+        // 深拷贝原始树
+        const clonedTree = XEUtils.clone(tree, true);
+
+        // 记录路径，用于后续处理
+        let targetPath = [];
+        let found = false;
+
+        /**
+         * 查找目标节点的路径
+         * @param {Object} node - 当前节点
+         * @param {Array} path - 当前路径
+         * @returns {Boolean} - 是否找到目标节点
+         */
+        function findPath(node, path) {
+          // 如果已经找到，直接返回
+          if (found) return true;
+
+          // 检查当前节点
+          if (node.id === targetId) {
+            targetPath = [...path, node.id];
+            found = true;
+            return true;
+          }
+
+          // 递归检查子节点
+          if (node.children && node.children.length > 0) {
+            for (const child of node.children) {
+              if (findPath(child, [...path, node.id])) {
+                return true;
+              }
+            }
+          }
+
+          return false;
+        }
+
+        /**
+         * 根据目标路径过滤树
+         * @param {Object} node - 当前节点
+         * @param {Array} currentPath - 当前路径
+         * @param {Number} depth - 当前深度
+         * @returns {Boolean} - 节点是否应保留
+         */
+        function filterByPath(node, currentPath, depth) {
+          // 如果当前节点是目标节点，则保留该节点及其所有子节点
+          if (node.id === targetId) {
+            return true;
+          }
+
+          // 当前节点是否在目标路径上
+          const isInPath = targetPath.includes(node.id);
+
+          // 处理子节点
+          if (node.children && node.children.length > 0) {
+            const nextPath = [...currentPath, node.id];
+            const nextDepth = depth + 1;
+
+            // 如果当前节点在路径上，保留所有子节点，但需要递归处理子节点
+            if (isInPath) {
+              // 过滤子节点，只保留在路径上或包含目标节点的分支
+              const filteredChildren = XEUtils.filter(node.children, (child) =>
+                filterByPath(child, nextPath, nextDepth)
+              );
+              node.children = filteredChildren;
+              return true;
+            }
+            // 否则，过滤子节点
+            else {
+              const filteredChildren = XEUtils.filter(node.children, (child) =>
+                filterByPath(child, nextPath, nextDepth)
+              );
+              node.children = filteredChildren;
+              return filteredChildren.length > 0;
+            }
+          }
+
+          // 叶子节点：根据是否在路径上决定是否保留
+          return isInPath;
+        }
+
+        // 首先找到目标节点的路径
+        for (const topNode of clonedTree) {
+          if (findPath(topNode, [])) {
+            break;
+          }
+        }
+
+        // 如果没有找到目标节点，返回空数组
+        if (!found) {
+          return [];
+        }
+
+        // 过滤整个树
+        const filteredTree = XEUtils.filter(clonedTree, (topNode) => {
+          // 如果顶层节点是目标节点，直接保留整个节点
+          if (topNode.id === targetId) {
+            return true;
+          }
+
+          // 如果顶层节点在路径上，过滤其子节点
+          if (targetPath.includes(topNode.id)) {
+            const filteredChildren = XEUtils.filter(topNode.children, (child) =>
+              filterByPath(child, [topNode.id], 1)
+            );
+            topNode.children = filteredChildren;
+            return true;
+          }
+
+          // 顶层节点不在路径上，检查其子节点
+          const filteredChildren = XEUtils.filter(topNode.children, (child) =>
+            filterByPath(child, [topNode.id], 1)
+          );
+
+          // 如果有匹配的子节点，保留顶层节点并更新其子节点
+          if (filteredChildren.length > 0) {
+            topNode.children = filteredChildren;
+            return true;
+          }
+
+          // 没有匹配的子节点，不保留顶层节点
+          return false;
+        });
+
+        return filteredTree;
+      }
+
+      let data = [
+        {
+          name: "总部",
+          id: "810000201202085623",
+          children: [
+            {
+              name: "研发部",
+              id: "320000199101255121",
+              children: [
+                {
+                  name: "研发一部",
+                  id: "510000200612064491",
+                  children: [
+                    {
+                      name: "研发小组",
+                      id: "320000201212254076",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: "河南省总部",
+          id: "650000200511226819",
+          children: [
+            {
+              name: "河南省研发部",
+              id: "43000019830405315X",
+              children: [
+                {
+                  name: "河南省研发一部",
+                  id: "450000199210011168",
+                  children: [
+                    {
+                      name: "河南省研发小组",
+                      id: "530000197605268946",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "河南省测试部",
+              id: "410000197307283550",
+              children: [
+                {
+                  name: "河南省测试一部",
+                  id: "64000020081109166X",
+                  children: [
+                    {
+                      name: "河南省测试小组",
+                      id: "140000198211061696",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: "湖北省总部",
+          id: "360000202302121498",
+          children: [
+            {
+              name: "湖北省研发部",
+              id: "810000199911300314",
+              children: [
+                {
+                  name: "湖北省研发一部",
+                  id: "430000201308307879",
+                  children: [
+                    {
+                      name: "湖北省研发小组",
+                      id: "650000197202060822",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "湖北省测试部",
+              id: "630000199407168576",
+              children: [
+                {
+                  name: "湖北省测试一部",
+                  id: "310000200508138414",
+                  children: [
+                    {
+                      name: "湖北省测试小组",
+                      id: "640000198201259525",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: "湖南省总部",
+          id: "520000199210180277",
+          children: [
+            {
+              name: "湖南省研发部",
+              id: "350000198606055812",
+              children: [
+                {
+                  name: "湖南省研发一部",
+                  id: "320000201405199704",
+                  children: [
+                    {
+                      name: "湖南省研发小组",
+                      id: "640000198304185768",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "湖南省测试部",
+              id: "330000201201166419",
+              children: [
+                {
+                  name: "湖南省测试一部",
+                  id: "65000019761207678X",
+                  children: [
+                    {
+                      name: "湖南省测试小组",
+                      id: "410000201102075693",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: "广东省总部",
+          id: "410000197010223637",
+          children: [
+            {
+              name: "广东省研发部",
+              id: "610000199509256813",
+              children: [
+                {
+                  name: "广东省研发一部",
+                  id: "350000198008257393",
+                  children: [
+                    {
+                      name: "广东省研发小组",
+                      id: "210000200201047215",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "广东省测试部",
+              id: "420000197207047229",
+              children: [
+                {
+                  name: "广东省测试一部",
+                  id: "130000201501162973",
+                  children: [
+                    {
+                      name: "广东省测试小组",
+                      id: "440000202406302568",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          name: "浙江省总部",
+          id: "340000202410028385",
+          children: [
+            {
+              name: "浙江省研发部",
+              id: "460000199204166237",
+              children: [
+                {
+                  name: "浙江省研发一部",
+                  id: "340000199511054561",
+                  children: [
+                    {
+                      name: "浙江省研发小组",
+                      id: "36000019911110448X",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              name: "浙江省测试部",
+              id: "440000200210136861",
+              children: [
+                {
+                  name: "浙江省测试一部",
+                  id: "460000199202277232",
+                  children: [
+                    {
+                      name: "浙江省测试小组",
+                      id: "440000198005096987",
+                      children: [],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ];
+
+      console.log(filterTreeById(data, "810000201202085623"));
+    </script>
+  </body>
+</html>
