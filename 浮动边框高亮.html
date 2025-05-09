@@ -57,7 +57,7 @@
           circle at var(--x, 50%) var(--y, 50%),
           rgba(255, 0, 0, 0.7) 0%,
           rgba(0, 0, 255, 0.6) 20%,
-          rgba(0, 0, 255, 0) 70%,
+          rgba(0, 0, 255, 0) 50%,
           rgba(0, 0, 0, 0) 100%
         );
         opacity: var(--opacity, 0);
@@ -86,7 +86,12 @@
         @mouseenter="handleMouseEnter"
         @mouseleave="handleMouseLeave"
       >
-        <section v-for="(item, index) in 16" :key="index" :data-index="index">
+        <section
+          v-for="(item, index) in cards"
+          :key="index"
+          :data-index="index"
+          :style="getCardStyle(index)"
+        >
           <div class="inner">
             <h3>卡片 {{ index + 1 }}</h3>
           </div>
@@ -96,52 +101,62 @@
   </body>
 
   <script>
-    const { createApp, ref, onMounted, onUnmounted } = Vue;
+    const { createApp, ref, reactive, computed } = Vue;
 
     createApp({
       setup() {
         const wrapper = ref(null);
-        // 获取所有卡片
+        const cards = ref(16);
+        const isHovering = ref(false);
+        const mousePosition = reactive({ x: 0, y: 0 });
+        const cardStyles = reactive({});
 
         const handleMouseMove = (e) => {
-          const cards = document.querySelectorAll("section");
-          // 获取鼠标当前位置
-          const mouseX = e.clientX;
-          const mouseY = e.clientY;
+          // 更新鼠标位置
+          mousePosition.x = e.clientX;
+          mousePosition.y = e.clientY;
 
-          // 遍历每个卡片，检查鼠标是否在卡片上方
-          cards.forEach((card) => {
+          // 获取所有卡片元素
+          const cardElements = wrapper.value.querySelectorAll("section");
+
+          // 更新每个卡片的样式
+          cardElements.forEach((card, index) => {
             const rect = card.getBoundingClientRect();
 
             // 计算鼠标相对于卡片的位置（百分比）
-            const x = ((mouseX - rect.left) / rect.width) * 100 + "%";
-            const y = ((mouseY - rect.top) / rect.height) * 100 + "%";
+            const x = ((mousePosition.x - rect.left) / rect.width) * 100;
+            const y = ((mousePosition.y - rect.top) / rect.height) * 100;
 
-            // 设置渐变的中心点
-            card.style.setProperty("--x", x);
-            card.style.setProperty("--y", y);
+            // 更新卡片样式
+            cardStyles[index] = {
+              "--x": `${x}%`,
+              "--y": `${y}%`,
+              "--opacity": isHovering.value ? "1" : "0",
+            };
           });
         };
 
-        const handleMouseEnter = (e) => {
-          const cards = document.querySelectorAll("section");
-          cards.forEach((card) => {
-            card.style.setProperty("--opacity", "1");
-          });
+        const handleMouseEnter = () => {
+          isHovering.value = true;
         };
 
-        const handleMouseLeave = (e) => {
-          const cards = document.querySelectorAll("section");
-          cards.forEach((card) => {
-            card.style.setProperty("--opacity", "0");
-          });
+        const handleMouseLeave = () => {
+          isHovering.value = false;
+        };
+
+        // 获取卡片样式
+        const getCardStyle = (index) => {
+          return cardStyles[index] || {};
         };
 
         return {
           wrapper,
+          cards,
+
           handleMouseMove,
           handleMouseEnter,
           handleMouseLeave,
+          getCardStyle,
         };
       },
     }).mount("#app");
