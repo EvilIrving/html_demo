@@ -1,47 +1,111 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1.0, user-scalable=no"
-    />
-    <title>Canvas Ruler Picker</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Canvas Ruler Picker</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f0f0;
+      /* Prevent default touch behaviors like scrolling */
+      touch-action: none;
+    }
+
+    .ruler-container {
+      width: 90%;
+      max-width: 500px;
+      background-color: #fff;
+      padding: 0 0;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      overflow: hidden;
+      /* Important for canvas */
+      position: relative;
+
+      display: flex;
+      flex-direction: column;
+      /* Needed for potential absolute positioning inside */
+    }
+
+    .value-display {
+      font-size: 2.5em;
+      font-weight: bold;
+      color: #007bff;
+      margin-bottom: 20px;
+    }
+
+    .value-display #unit {
+      font-size: 0.5em;
+      font-weight: normal;
+      color: #666;
+      margin-left: 5px;
+    }
+
+    #rulerCanvas {
+      display: block;
+      width: 100%;
+      /* Make canvas responsive within the container */
+      height: 120px;
+      /* Fixed height for the ruler */
+      cursor: grab;
+    }
+
+    #rulerCanvas:active {
+      cursor: grabbing;
+    }
+  </style>
+</head>
+
+
+<body>
+  <div class="ruler-container">
     <div class="ruler-container">
-      <canvas id="rulerCanvas"></canvas>
+      <div class="ruler-value">
+        <span id="current-value">0.0</span>
+        <span id="unit">kg</span>
+      </div>
     </div>
+    <canvas id="rulerCanvas"></canvas>
+  </div>
 
-    <script src="test.ruler.js"></script>
-    <script>
-      // --- Configuration ---
-      const rulerElement = document.getElementById("rulerCanvas");
-      const valueElement = document.getElementById("current-value");
-      const unitElement = document.getElementById("unit");
 
-      const ruler = new RulerPicker(rulerElement);
+  <script src="ruler.js"></script>
+  <script>
+    // --- Configuration ---
+    const rulerElement = document.getElementById("rulerCanvas");
+    const valueElement = document.getElementById("current-value");
+    const unitElement = document.getElementById("unit");
 
-      // const ruler = new RulerPicker(rulerElement, {
-      //   min: 0,
-      //   max: 20,
-      //   initialValue: 7.1, // Or any starting value
-      //   unit: "kg",
-      //   tickInterval: 0.1,
-      //   majorTickInterval: 1,
-      //   pixelsPerUnit: 80, // How many pixels represent 1 unit (e.g., 1kg)
-      //   onChange: (value) => {
-      //     valueElement.textContent = value.toFixed(1); // Update displayed value
-      //     console.log("Selected value:", value);
-      //   },
-      //   onUnitChange: (unit) => {
-      //     unitElement.textContent = unit;
-      //   },
-      // });
+    // const ruler = new RulerPicker(rulerElement);
 
-      //  * 参考 https://100px.net/usage/wx.html 如何封装为多个平台组件
-      //  * 参考 https://www.yuque.com/nowthen/longroad/dv2705#weuhP 了解有哪些问题
-    </script>
-  </body>
+    const ruler = new RulerPicker(rulerElement, {
+      min: 0,
+      max: 20,
+      initialValue: 7.1, // Or any starting value
+      unit: "kg",
+      tickInterval: 0.1,
+      majorTickInterval: 1,
+      pixelsPerUnit: 80, // How many pixels represent 1 unit (e.g., 1kg)
+      onChange: (value) => {
+        valueElement.textContent = value.toFixed(1); // Update displayed value
+        console.log("Selected value:", value);
+      },
+      onUnitChange: (unit) => {
+        unitElement.textContent = unit;
+      },
+    });
+
+    //  * 参考 https://100px.net/usage/wx.html 如何封装为多个平台组件
+    //  * 参考 https://www.yuque.com/nowthen/longroad/dv2705#weuhP 了解有哪些问题
+  </script>
+</body>
+
 </html>

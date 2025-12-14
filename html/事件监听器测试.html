@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Event Listener Memory Test</title>
+    <style>
+      #elem {
+        width: 200px;
+        height: 200px;
+        background-color: #3498db;
+        margin: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+      }
+      #testDiv {
+        width: 200px;
+        height: 200px;
+        background-color: #3498db;
+        margin: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        cursor: pointer;
+      }
+      button {
+        margin: 20px;
+        padding: 10px;
+        cursor: pointer;
+      }
+      #log {
+        margin: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        min-height: 100px;
+      }
+    </style>
+  </head>
+  <body>
+    <button onclick="addClassEvent()">添加事件</button>
+    <button onclick="removeClassEvent()">移除事件</button>
+    <div id="elem">Class 方式添加监听</div>
+
+    <div>------------------------</div>
+    <button onclick="addListener()">添加事件</button>
+    <button onclick="removeListener()">移除事件</button>
+    <button onclick="removeDiv()">移除元素</button>
+    <button onclick="checkMemory()">检查事件是否复用</button>
+    <button onclick="createNewDiv()">重新创建 DIV</button>
+    <div id="log">日志区域:</div>
+    <div id="testDiv">点击我测试</div>
+    <script>
+      let clickCount = 0;
+      let originalDiv = document.getElementById("testDiv");
+      const logElement = document.getElementById("log");
+
+      function logMessage(message) {
+        logElement.innerHTML += `<br>${new Date().toLocaleTimeString()}: ${message}`;
+      }
+
+      function handleMouseDown(e) {
+        clickCount++;
+        logMessage(`DIV被点击 - 第${clickCount}次`);
+      }
+
+      // 添加事件监听器
+      function addListener() {
+        const div = document.getElementById("testDiv");
+        div.addEventListener("mousedown", handleMouseDown);
+        logMessage("事件监听器已添加");
+      }
+
+      function removeListener() {
+        const div = document.getElementById("testDiv");
+        div.removeEventListener("mousedown", handleMouseDown);
+        logMessage("事件监听器已移除");
+      }
+
+      function removeDiv() {
+        const div = document.getElementById("testDiv");
+        div.remove();
+        logMessage("DIV已被删除");
+      }
+
+      function createNewDiv() {
+        const newDiv = document.createElement("div");
+        newDiv.id = "testDiv";
+        newDiv.innerHTML = "新的 div ，点击？";
+        document.body.appendChild(newDiv);
+        logMessage("新的DIV已创建");
+      }
+
+      function checkMemory() {
+        const div = originalDiv;
+        if (div) {
+          div.remove();
+          logMessage("DIV已被删除");
+        }
+
+        document.body.appendChild(div);
+
+        handleMouseDown = null;
+        logMessage("div 又回来了");
+      }
+
+      class Menu {
+        constructor(elem) {
+          this.elem = elem;
+        }
+        handleEvent(event) {
+          // mousedown -> onMousedown
+          let method = "on" + event.type[0].toUpperCase() + event.type.slice(1);
+          this[method](event);
+        }
+
+        onMousedown() {
+          this.elem.innerHTML = "down";
+        }
+
+        onMouseup() {
+          this.elem.innerHTML += "up";
+        }
+      }
+
+      let menu = new Menu(document.getElementById("elem"));
+      function addClassEvent() {
+        elem.addEventListener("mousedown", menu);
+        elem.addEventListener("mouseup", menu);
+      }
+
+      function removeClassEvent() {
+        elem.removeEventListener("mousedown", menu);
+        elem.removeEventListener("mouseup", menu);
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>浮动边框高亮效果</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        padding: 16px;
+      }
+
+      #app {
+        width: 100vw;
+        height: 100vh;
+        user-select: none;
+        -webkit-user-select: none;
+      }
+
+      .wrapper {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-template-rows: repeat(4, 1fr);
+        grid-gap: 10px;
+        height: 100%;
+        width: 100%;
+      }
+
+      section {
+        background-color: rgba(0, 0, 0, 0.5);
+        color: #fff;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.2s ease;
+      }
+
+      section:hover {
+        transform: scale(1.02);
+      }
+
+      section::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: radial-gradient(
+          circle at var(--x, 50%) var(--y, 50%),
+          rgba(255, 0, 0, 0.7) 0%,  
+          rgba(0, 0, 255, 0.6) 20%,
+          rgba(0, 0, 255, 0) 50%,
+          rgba(0, 0, 0, 0) 100%
+        );
+        opacity: var(--opacity, 0);
+        transition: opacity 0.3s ease;
+      }
+
+      .inner {
+        position: absolute;
+        inset: 4px;
+        border-radius: inherit;
+        background-color: rgb(137, 137, 234);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+    </style>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div
+        class="wrapper"
+        ref="wrapper"
+        @mousemove="handleMouseMove"
+        @mouseenter="handleMouseEnter"
+        @mouseleave="handleMouseLeave"
+      >
+        <section
+          v-for="(item, index) in cards"
+          :key="index"
+          :data-index="index"
+          :style="getCardStyle(index)"
+        >
+          <div class="inner">
+            <h3>卡片 {{ index + 1 }}</h3>
+          </div>
+        </section>
+      </div>
+    </div>
+  </body>
+
+  <script>
+    const { createApp, ref, reactive, computed } = Vue;
+
+    createApp({
+      setup() {
+        const wrapper = ref(null);
+        const cards = ref(16);
+        const isHovering = ref(false);
+        const mousePosition = reactive({ x: 0, y: 0 });
+        const cardStyles = reactive({});
+
+        const handleMouseMove = (e) => {
+          // 更新鼠标位置
+          mousePosition.x = e.clientX;
+          mousePosition.y = e.clientY;
+
+          // 获取所有卡片元素
+          const cardElements = wrapper.value.querySelectorAll("section");
+
+          // 更新每个卡片的样式
+          cardElements.forEach((card, index) => {
+            const rect = card.getBoundingClientRect();
+
+            // 计算鼠标相对于卡片的位置（百分比）
+            const x = ((mousePosition.x - rect.left) / rect.width) * 100;
+            const y = ((mousePosition.y - rect.top) / rect.height) * 100;
+
+            // 更新卡片样式
+            cardStyles[index] = {
+              "--x": `${x}%`,
+              "--y": `${y}%`,
+              "--opacity": isHovering.value ? "1" : "0",
+            };
+          });
+        };
+
+        const handleMouseEnter = () => {
+          isHovering.value = true;
+        };
+
+        const handleMouseLeave = () => {
+          isHovering.value = false;
+        };
+
+        // 获取卡片样式
+        const getCardStyle = (index) => {
+          return cardStyles[index] || {};
+        };
+
+        return {
+          wrapper,
+          cards,
+
+          handleMouseMove,
+          handleMouseEnter,
+          handleMouseLeave,
+          getCardStyle,
+        };
+      },
+    }).mount("#app");
+  </script>
+</html>

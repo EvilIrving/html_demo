@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>OpenLayers 围栏绘制示例</title>
+    <!-- 引入 OpenLayers 样式和库 -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/css/ol.css"
+    />
+    <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@master/en/v6.5.0/build/ol.js"></script>
+    <style>
+      #map {
+        width: 100%;
+        height: 600px;
+      }
+      .toolbar {
+        margin: 10px;
+        padding: 10px;
+        background: #f5f5f5;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="toolbar">
+      <button onclick="startDraw()">开始绘制围栏</button>
+      <button onclick="stopDraw()">结束绘制</button>
+      <button onclick="editFence()">编辑围栏</button>
+      <button onclick="saveFences()">保存围栏</button>
+      <button onclick="loadFences()">加载围栏</button>
+    </div>
+    <div id="map"></div>
+
+    <script>
+      // 初始化地图
+      const map = new ol.Map({
+        target: "map",
+        layers: [new ol.layer.Tile({ source: new ol.source.OSM() })],
+        view: new ol.View({
+          center: ol.proj.fromLonLat([120, 30]),
+          zoom: 8,
+        }),
+      });
+
+      const fenceSource = new ol.source.Vector();
+      const fenceLayer = new ol.layer.Vector({
+        source: fenceSource,
+        style: new ol.style.Style({
+          fill: new ol.style.Fill({ color: "rgba(255,0,0,0.2)" }),
+          stroke: new ol.style.Stroke({ color: "#ff0000", width: 2 }),
+        }),
+      });
+      map.addLayer(fenceLayer);
+
+      // 3. 预加载 GeoJSON 数据
+      fetch("./fences.geojson") // 请确保文件路径正确
+        .then((response) => response.json())
+        .then((data) => {
+          const geoJSON = new ol.format.GeoJSON();
+          const features = geoJSON.readFeatures(data, {
+            dataProjection: "EPSG:4326",
+            featureProjection: "EPSG:3857",
+          });
+          fenceSource.addFeatures(features);
+
+          // 自动缩放到数据范围
+          map.getView().fit(fenceSource.getExtent(), {
+            padding: [50, 50, 50, 50],
+            duration: 1000,
+          });
+        })
+        .catch((error) => console.error("加载 GeoJSON 失败:", error));
+
+      // 交互控件
+      let draw, modify, select;
+
+      // 开始绘制围栏
+      function startDraw() {
+        if (draw) map.removeInteraction(draw);
+        draw = new ol.interaction.Draw({
+          source: fenceSource,
+          type: "Polygon",
+          freehand: true,
+        });
+        map.addInteraction(draw);
+      }
+
+      // 结束绘制
+      function stopDraw() {
+        if (draw) map.removeInteraction(draw);
+      }
+
+      // 编辑围栏
+      function editFence() {
+        if (modify) map.removeInteraction(modify);
+        modify = new ol.interaction.Modify({ source: fenceSource });
+        map.addInteraction(modify);
+
+        // 添加顶点选择
+        select = new ol.interaction.Select({
+          condition: ol.events.condition.click,
+        });
+        map.addInteraction(select);
+      }
+
+      // 保存围栏数据
+      function saveFences() {
+        const geoJSON = new ol.format.GeoJSON();
+        const data = geoJSON.writeFeatures(fenceSource.getFeatures());
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "fences.geojson";
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // 加载围栏数据
+      function loadFences() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".geojson";
+        input.onchange = (e) => {
+          const file = e.target.files[0];
+          const reader = new FileReader();
+          reader.onload = () => {
+            const geoJSON = new ol.format.GeoJSON();
+            const features = geoJSON.readFeatures(reader.result);
+            fenceSource.clear();
+            fenceSource.addFeatures(features);
+          };
+          reader.readAsText(file);
+        };
+        input.click();
+      }
+    </script>
+  </body>
+</html>

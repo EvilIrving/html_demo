@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        html,
+        body,
+        .container {
+            height: 100%;
+            margin: 0;
+        }
+
+        /* 圣杯布局 */
+        .container {
+            margin: 0px 200px 0px 150px;
+        }
+
+        .container .column {
+            float: left;
+            height: 100%;
+            position: relative;
+        }
+
+        .middle {
+            width: 100%;
+            background-color: aquamarine;
+        }
+
+        .left {
+            left: -150px;
+            width: 150px;
+            margin-left: -100%;
+            background-color: blanchedalmond;
+        }
+
+        .right {
+            width: 200px;
+            right: -200px;
+            margin-left: -200px;
+            background-color: burlywood;
+        }
+
+        /* 双飞翼布局 */
+        /* .container .column {
+            float: left;
+            height: 100%;
+        }
+
+        .middle {
+            width: 100%;
+            background-color: aquamarine;
+        }
+
+        .main{
+            height: 100%;
+            margin: 0px 200px 0px 150px;
+        }
+
+        .left {
+            width: 150px;
+            margin-left: -100%;
+            background-color: aliceblue;
+        }
+
+        .right {
+            width: 200px;
+            margin-left: -200px;
+            background-color: beige;
+        } */
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="column middle"></div>
+        <div class="column left"></div>
+        <div class="column right"></div>
+    </div>
+
+    <!-- <div class="container">
+        <div class="column middle">
+            <div class="main">双飞翼布局</div>
+        </div>
+        <div class="column left"></div>
+        <div class="column right"></div>
+    </div> -->
+</body>
+
+</html>

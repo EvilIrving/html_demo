@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF文件合并工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 2rem;
+        }
+
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            padding: 2rem;
+            text-align: center;
+            background-color: #fafafa;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone:hover, .drop-zone.drag-over {
+            border-color: #4CAF50;
+            background-color: #f0f9f0;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .upload-button {
+            background-color: #4CAF50;
+        }
+
+        .upload-button:hover {
+            background-color: #45a049;
+        }
+
+        .clear-button {
+            background-color: #f44336;
+        }
+
+        .clear-button:hover {
+            background-color: #da190b;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .file-list {
+            margin-top: 2rem;
+            border-top: 1px solid #eee;
+            padding-top: 1rem;
+        }
+
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem;
+            background-color: #f8f9fa;
+            margin-bottom: 0.5rem;
+            border-radius: 4px;
+            cursor: move;
+            transition: background-color 0.2s ease;
+        }
+
+        .file-item:hover {
+            background-color: #e9ecef;
+        }
+
+        .file-item.sortable-ghost {
+            opacity: 0.4;
+            background-color: #e9ecef;
+        }
+
+        .file-name {
+            flex: 1;
+            margin-right: 1rem;
+        }
+
+        .drag-handle {
+            cursor: move;
+            padding: 0 10px;
+            color: #666;
+        }
+
+        .remove-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+
+        .remove-button:hover {
+            background-color: #c82333;
+        }
+
+        .status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 4px;
+            display: none;
+        }
+
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        .filename-input-container {
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .filename-input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .merge-button {
+            background-color: #007bff;
+            width: 100%;
+        }
+
+        .merge-button:hover {
+            background-color: #0056b3;
+        }
+
+        .file-order {
+            margin-right: 10px;
+            color: #666;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PDF文件合并工具</h1>
+        
+        <div class="drop-zone" id="dropZone">
+            <p>拖放PDF文件到这里</p>
+            <p>或者</p>
+            <div class="button-group">
+                <label class="button upload-button">
+                    选择文件
+                    <input type="file" multiple accept=".pdf" class="file-input" id="fileInput">
+                </label>
+                <button class="button clear-button" id="clearButton">清空文件</button>
+            </div>
+        </div>
+
+        <div class="file-list" id="fileList"></div>
+        
+        <div class="filename-input-container">
+            <label for="filename">输入合并后的文件名 (可选)</label>
+            <input type="text" id="filename" class="filename-input" placeholder="merged.pdf">
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const status = document.getElementById('status');
+        const clearButton = document.getElementById('clearButton');
+        const filenameInput = document.getElementById('filename');
+        
+        let selectedFiles = [];
+
+        // 初始化拖拽排序
+        new Sortable(fileList, {
+            animation: 150,
+            ghostClass: 'sortable-ghost',
+            onEnd: function(evt) {
+                const files = Array.from(fileList.children).map(item => 
+                    selectedFiles.find(f => f.name === item.getAttribute('data-filename'))
+                );
+                selectedFiles = files;
+                updateFileOrder();
+            }
+        });
+
+        // 处理文件选择
+        fileInput.addEventListener('change', handleFileSelect);
+        
+        // 拖放处理
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        // 清空按钮处理
+        clearButton.addEventListener('click', () => {
+            selectedFiles = [];
+            fileList.innerHTML = '';
+            fileInput.value = '';
+            showStatus('已清空所有文件', 'success');
+        });
+
+        function handleFileSelect(event) {
+            const files = event.target.files;
+            handleFiles(files);
+        }
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                if (file.type === 'application/pdf') {
+                    selectedFiles.push(file);
+                    displayFile(file);
+                }
+            });
+            updateFileOrder();
+        }
+
+        function updateFileOrder() {
+            const items = fileList.getElementsByClassName('file-item');
+            Array.from(items).forEach((item, index) => {
+                const orderSpan = item.querySelector('.file-order');
+                orderSpan.textContent = `${index + 1}.`;
+            });
+        }
+
+        function displayFile(file) {
+            const fileItem = document.createElement('div');
+            fileItem.className = 'file-item';
+            fileItem.setAttribute('data-filename', file.name);
+            
+            const orderSpan = document.createElement('span');
+            orderSpan.className = 'file-order';
+            orderSpan.textContent = `${fileList.children.length + 1}.`;
+            
+            const dragHandle = document.createElement('span');
+            dragHandle.className = 'drag-handle';
+            dragHandle.innerHTML = '⋮';
+            
+            const fileName = document.createElement('div');
+            fileName.className = 'file-name';
+            fileName.textContent = file.name;
+            
+            const removeButton = document.createElement('button');
+            removeButton.className = 'remove-button';
+            removeButton.textContent = '删除';
+            removeButton.onclick = (e) => {
+                e.stopPropagation();
+                selectedFiles = selectedFiles.filter(f => f !== file);
+                fileItem.remove();
+                updateFileOrder();
+            };
+            
+            fileItem.appendChild(orderSpan);
+            fileItem.appendChild(dragHandle);
+            fileItem.appendChild(fileName);
+            fileItem.appendChild(removeButton);
+            fileList.appendChild(fileItem);
+        }
+
+        async function mergePDFs(pdfFiles) {
+            try {
+                const mergedPdf = await PDFLib.PDFDocument.create();
+                
+                for (const pdfFile of pdfFiles) {
+                    const pdfBytes = await pdfFile.arrayBuffer();
+                    const pdf = await PDFLib.PDFDocument.load(pdfBytes);
+                    const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+                    pages.forEach(page => mergedPdf.addPage(page));
+                }
+                
+                return await mergedPdf.save();
+            } catch (error) {
+                throw new Error('PDF合并失败: ' + error.message);
+            }
+        }
+
+        function downloadMergedPDF(pdfBytes, fileName = 'merged.pdf') {
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        async function handleMerge() {
+            if (selectedFiles.length === 0) {
+                showStatus('请先选择PDF文件', 'error');
+                return;
+            }
+
+            try {
+                showStatus('正在合并PDF文件...', 'success');
+                const mergedPdfBytes = await mergePDFs(selectedFiles);
+                const fileName = filenameInput.value.trim() || 'merged.pdf';
+                const finalFileName = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
+                downloadMergedPDF(mergedPdfBytes, finalFileName);
+                showStatus('PDF文件合并成功！', 'success');
+            } catch (error) {
+                showStatus(error.message, 'error');
+            }
+        }
+
+        function showStatus(message, type) {
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        // 添加合并按钮
+        const mergeButton = document.createElement('button');
+        mergeButton.className = 'button merge-button';
+        mergeButton.style.marginTop = '2rem';
+        mergeButton.textContent = '合并PDF';
+        mergeButton.onclick = handleMerge;
+        document.querySelector('.container').appendChild(mergeButton);
+    </script>
+</body>
+</html>

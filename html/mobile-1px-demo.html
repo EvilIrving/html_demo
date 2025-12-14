@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>移动端1px边框解决方案演示</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Helvetica, Arial, sans-serif;
+        padding: 16px;
+        color: #333;
+        background-color: #f7f7f7;
+      }
+
+      h1 {
+        font-size: 20px;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      .demo-container {
+        max-width: 540px;
+        margin: 0 auto;
+      }
+
+      .demo-item {
+        margin-bottom: 24px;
+        padding: 12px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .demo-title {
+        font-size: 16px;
+        margin-bottom: 12px;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .demo-desc {
+        font-size: 14px;
+        margin-bottom: 12px;
+        color: #666;
+        line-height: 1.5;
+      }
+
+      .box {
+        height: 80px;
+        margin-bottom: 4px;
+        background-color: #f0f4f8;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: #555;
+      }
+
+      /* 1. 常规1px边框（对比用） */
+      .normal-border {
+        border: 1px solid #1677ff;
+      }
+
+      /* 2. transform: scale(0.5)方案 */
+      .scale-border {
+        position: relative;
+      }
+
+      .scale-border::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 200%;
+        height: 200%;
+        border: 1px solid #1677ff;
+        transform: scale(0.5);
+        transform-origin: 0 0;
+        box-sizing: border-box; /** 为了与原元素等大*/
+        pointer-events: none;
+        border-radius: 4px;
+      }
+
+      /* 3. border-image方案 */
+      .border-image {
+        border-width: 1px;
+        border-style: solid;
+        border-image: linear-gradient(#1677ff, #1677ff) 1 stretch;
+      }
+
+      /* 4. background-image方案 */
+      .bg-image {
+        background-image: linear-gradient(
+            0deg,
+            #1677ff,
+            #1677ff 50%,
+            transparent 50%
+          ),
+          linear-gradient(90deg, #1677ff, #1677ff 50%, transparent 50%),
+          linear-gradient(180deg, #1677ff, #1677ff 50%, transparent 50%),
+          linear-gradient(270deg, #1677ff, #1677ff 50%, transparent 50%);
+        background-size: 100% 1px, 1px 100%, 100% 1px, 1px 100%;
+        background-repeat: no-repeat;
+        background-position: bottom, right, top, left;
+      }
+
+      /* 5. box-shadow方案 */
+      .box-shadow {
+        box-shadow: 0 0 0 0.5px #1677ff;
+      }
+
+      /* 6. 媒体查询+伪元素 */
+      @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 2dppx) {
+        .media-query-border {
+          position: relative;
+        }
+
+        .media-query-border::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 200%;
+          height: 200%;
+          border: 1px solid #1677ff;
+          transform: scale(0.5);
+          transform-origin: left top; /**transform-origin: 0 0;*/
+
+          box-sizing: border-box;
+          pointer-events: none;
+        }
+      }
+
+      /* 设备像素比为3时 */
+      @media (-webkit-min-device-pixel-ratio: 3), (min-resolution: 3dppx) {
+        .media-query-border::after {
+          width: 300%;
+          height: 300%;
+          transform: scale(0.33333);
+        }
+      }
+
+      .device-info {
+        font-size: 14px;
+        text-align: center;
+        margin-bottom: 20px;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="demo-container">
+      <h1>移动端1px边框解决方案演示</h1>
+
+      <div class="device-info" id="deviceInfo">设备像素比(DPR): 计算中...</div>
+
+      <div class="demo-item">
+        <div class="demo-title">1. 普通1px边框（对照组）</div>
+        <div class="demo-desc">
+          直接使用CSS的1px边框，在高DPR设备上会显得较粗
+        </div>
+        <div class="box normal-border">普通1px边框</div>
+      </div>
+
+      <div class="demo-item">
+        <div class="demo-title">2. transform: scale(0.5)方案</div>
+        <div class="demo-desc">
+          使用伪元素+transform缩放，是最常用的解决方案
+        </div>
+        <div class="box scale-border">transform scale方案</div>
+      </div>
+
+      <div class="demo-item">
+        <div class="demo-title">3. border-image方案</div>
+        <div class="demo-desc">
+          使用设计好的图片作为边框图片,下面没有用图片，就不行
+        </div>
+        <div class="box border-image">border-image方案</div>
+      </div>
+
+      <div class="demo-item">
+        <div class="demo-title">4. background-image方案</div>
+        <div class="demo-desc">使用线性渐变创建1px的背景图，模拟边框效果</div>
+        <div class="box bg-image">background-image方案</div>
+      </div>
+
+      <div class="demo-item">
+        <div class="demo-title">5. box-shadow方案</div>
+        <div class="demo-desc">使用box-shadow模拟边框，可以设置0.5px的值</div>
+        <div class="box box-shadow">box-shadow方案</div>
+      </div>
+
+      <div class="demo-item">
+        <div class="demo-title">6. 媒体查询+伪元素方案</div>
+        <div class="demo-desc">根据设备像素比使用不同的缩放比例</div>
+        <div class="box media-query-border">媒体查询+伪元素方案</div>
+      </div>
+    </div>
+
+    <script>
+      // 显示设备像素比信息
+      document.addEventListener("DOMContentLoaded", function () {
+        const dpr = window.devicePixelRatio || 1;
+        document.getElementById(
+          "deviceInfo"
+        ).textContent = `设备像素比(DPR): ${dpr}`;
+      });
+    </script>
+  </body>
+</html>
